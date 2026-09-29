@@ -13,7 +13,7 @@ garis-depan/
 ├── css/
 │   └── style.css        semua styling
 ├── data/                 <-- edit file-file di sini untuk mengubah gim
-│   ├── config.js         statistik umum + LAYOUT PETA (menara, markas, level, dll)
+│   ├── config.js         statistik umum + LAYOUT PETA (menara, nexus, safe zone, level, dll)
 │   ├── heroes.js         daftar hero + kemampuan (bisa lebih dari satu)
 │   ├── minions.js        jenis minion jalur, susunan gelombang, pertumbuhan stat
 │   └── jungle.js         jenis monster hutan + posisi kemp
@@ -60,13 +60,17 @@ diganti lewat shortcut **Q** dan **E** (bisa diganti di "⚙ Atur Tombol").
 Prioritas menentukan target mana yang diserang duluan saat ada beberapa
 musuh dalam jangkauan sekaligus:
 
-- **"Prioritas: ..."** — jenis target yang diutamakan, berputar tiap
-  diklik: **Minion → Hero → Bangunan → Minion → ...** (jenis yang
+- **"Prioritas: ..."** (tombol **Q**) — jenis target yang diutamakan,
+  berputar tiap ditekan: **Minion → Hero → Bangunan → Minion → ...** (jenis yang
   dipilih dicoba lebih dulu; kalau tidak ada target jenis itu dalam
   jangkauan, otomatis lanjut ke jenis berikutnya di urutan tersebut).
-- **"Fokus: HP ..."** — di antara target sejenis, pilih yang **HP
-  Terendah** atau **HP Tertinggi** (jarak hanya dipakai sebagai
-  pemecah seri kalau HP-nya sama).
+- **"Fokus: ..."** (tombol **E**) — di antara target sejenis, pilih
+  berdasarkan status. Urutan ganti: **HP Terendah → HP Tertinggi →
+  HP% Terendah → HP% Tertinggi → ...**. "HP" membandingkan angka HP
+  mentah; "HP%" membandingkan persentase HP terhadap HP maksimum
+  (mis. minion 50/100 = 50% lebih "rendah" dari hero 300/400 = 75%
+  walau angka HP-nya lebih kecil). Jarak hanya dipakai sebagai pemecah
+  seri. "Bangunan" mencakup menara dan nexus.
 
 Monster hutan hanya diserang kalau tidak ada minion/hero/bangunan dalam
 jangkauan. Nilai awal kedua pengaturan ini bisa diubah lewat
@@ -82,9 +86,10 @@ Peta tidak lagi diperkecil supaya muat di layar. Ukuran layar (`viewport`
 di `data/config.js`) selalu tetap, sedangkan peta (`canvasW`/`canvasH`)
 boleh jauh lebih besar — **kamera mengikuti hero pemain** dan berhenti di
 tepi peta. Kalau peta lebih kecil dari layar, peta ditaruh di tengah.
-Selama hero menunggu respawn, kamera tetap di tempat hero terakhir.
+Selama hero menunggu respawn, kamera tetap di tempat hero terakhir dan
+layar menampilkan hitung mundur **"BANGKIT DALAM Ns"** di tengah kamera.
 
-**Minimap** menampilkan seluruh peta (markas, menara, minion, monster
+**Minimap** menampilkan seluruh peta (safe zone, nexus, menara, minion, monster
 hutan, kedua hero) beserta kotak putih penanda area yang sedang terlihat.
 Atur lewat `minimap` di `data/config.js`:
 
@@ -95,6 +100,35 @@ Atur lewat `minimap` di `data/config.js`:
 - `margin` — jarak dari tepi layar
 
 Untuk mencoba kamera, ubah `canvasW` jadi mis. `2400` di `data/config.js`.
+
+## Nexus & safe zone (dua hal terpisah)
+
+Sisi tiap tim punya dua elemen berbeda, disusun dari tepi peta ke tengah:
+**safe zone → nexus → menara → jalur**. Safe zone ada di posisi yang
+*lebih dalam* dari nexus (paling dekat tepi peta).
+
+- **Nexus** — bangunan utama berbentuk **segi delapan**. Hancur = tim itu
+  kalah. Nexus **menyerang seperti menara**: memprioritaskan minion
+  musuh yang masuk jangkauan, baru hero, dan mengabaikan monster hutan.
+  Diatur lewat `nexus` (`hp`, `dmg`, `range`, `atkInterval`, `radius`)
+  dan `playerNexus`/`enemyNexus` (posisi) di `data/config.js`.
+- **Safe zone** — jalur di tepi peta di belakang nexus (label "ZONA
+  AMAN"). Hero **muncul dan respawn di sini**, **memulihkan HP** selama
+  berada di dalamnya, dan — selama `protectHeroes: true` — **tidak bisa
+  diserang** (sebagai gantinya hero di dalam zona juga tidak bisa
+  menyerang atau memakai kemampuan serangan; kemampuan `heal` tetap
+  boleh). Diatur lewat `safeZone` (`widthPct`, `regenRate`,
+  `protectHeroes`) dan `playerSpawn`/`enemySpawn` (harus berada di dalam
+  zona) di `data/config.js`.
+- Minion muncul di depan nexus, di titik `waveSpawnXPct` (persentase
+  lebar peta) — ikut menyesuaikan kalau peta dibuat sangat lebar.
+
+## Timer respawn
+
+Saat sebuah hero mati, hitung mundur respawn tampil di dua tempat: **tag
+merah "Bangkit dalam Ns" di panel info atas** (panel pemain dan musuh
+masing-masing) dan **overlay di tengah kamera** untuk hero pemain.
+Lamanya = `heroRespawnBase + level × heroRespawnPerLevel` (`config.js`).
 
 ## Tampilan hero di kanvas
 
@@ -126,18 +160,18 @@ kanan sebelum benar-benar memulai pertandingan.
 ## Mengedit statistik gim & LAYOUT PETA
 
 Buka **`data/config.js`** — semua angka balancing umum ada di sana
-(HP menara/markas, damage menara, jeda gelombang, regen dekat markas,
+(HP menara/nexus, damage menara & nexus, jeda gelombang, regen safe zone,
 waktu respawn hero, kebutuhan XP per level, **batas level maksimum**),
 lengkap dengan komentar penjelas di setiap baris.
 
-File yang sama juga mengatur **layout peta**. Posisi markas, menara,
+File yang sama juga mengatur **layout peta**. Posisi nexus, safe zone, menara,
 titik spawn, dan batas jalur ditulis sebagai persentase (`xPct`/`yPct`,
 0 = kiri/atas, 1 = kanan/bawah) dari ukuran kanvas (`canvasW`/`canvasH`),
 bukan piksel tetap. Ini dibuat khusus supaya kamu bisa mengubah peta
 secara ekstrem:
 
 - Ganti `canvasW`/`canvasH` ke ukuran apa pun (mis. `1600 x 300` untuk
-  jalur sangat panjang, atau `500 x 900` untuk peta vertikal) — markas,
+  jalur sangat panjang, atau `500 x 900` untuk peta vertikal) — nexus,
   menara, dan spawn otomatis ikut menyesuaikan proporsi.
 - Tambah lebih dari satu menara per sisi lewat array `towers.player` /
   `towers.enemy` — cocok untuk jalur panjang dengan beberapa lapis

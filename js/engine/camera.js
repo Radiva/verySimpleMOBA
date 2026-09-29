@@ -63,11 +63,26 @@ window.Engine = window.Engine || {};
     ctx.lineWidth=1;
     ctx.strokeRect(mx+0.5,my+0.5,mmW-1,mmH-1);
 
-    // markas di kedua ujung
-    ctx.fillStyle='rgba(63,127,176,0.85)';
-    ctx.fillRect(mx, my, Math.max(2,L.BASE_W*scale), mmH);
-    ctx.fillStyle='rgba(178,64,47,0.85)';
-    ctx.fillRect(mx+mmW-Math.max(2,L.BASE_W*scale), my, Math.max(2,L.BASE_W*scale), mmH);
+    // safe zone di kedua ujung
+    const szW=Math.max(2,L.SAFE_W*scale);
+    ctx.fillStyle='rgba(63,127,176,0.55)';
+    ctx.fillRect(mx, my, szW, mmH);
+    ctx.fillStyle='rgba(178,64,47,0.55)';
+    ctx.fillRect(mx+mmW-szW, my, szW, mmH);
+
+    // nexus (segi delapan kecil)
+    const oct=(n,color)=>{
+      const r=Math.max(2.5,n.radius*scale);
+      ctx.beginPath();
+      for(let i=0;i<8;i++){
+        const a=Math.PI/8+i*Math.PI/4, px=mx+n.x*scale+Math.cos(a)*r, py=my+n.y*scale+Math.sin(a)*r;
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+      ctx.strokeStyle='#ece4d0'; ctx.lineWidth=0.7; ctx.stroke();
+    };
+    if(s.playerBase.hp>0) oct(s.playerBase,'#3f7fb0');
+    if(s.enemyBase.hp>0) oct(s.enemyBase,'#b2402f');
 
     // menara
     ctx.fillStyle='#5a9bd0';

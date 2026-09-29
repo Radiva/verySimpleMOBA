@@ -40,21 +40,55 @@ window.Engine = window.Engine || {};
     ctx.strokeRect(x,y,w,h);
   }
 
-  function drawBase(base,isPlayer){
+  // Safe zone: jalur di tepi peta di belakang nexus (spawn & pemulihan HP hero)
+  function drawSafeZone(isPlayer){
     const ctx=E.ctx, L=E.layout;
-    const w=L.BASE_W,h=L.CANVAS_H;
+    const w=L.SAFE_W,h=L.CANVAS_H;
     const x = isPlayer ? 0 : L.CANVAS_W-w;
-    const alive = base.hp>0;
-    ctx.fillStyle = isPlayer ? 'rgba(63,127,176,0.28)' : 'rgba(178,64,47,0.28)';
+    ctx.fillStyle = isPlayer ? 'rgba(63,127,176,0.22)' : 'rgba(178,64,47,0.22)';
     ctx.fillRect(x,0,w,h);
     ctx.strokeStyle = isPlayer ? '#3f7fb0' : '#b2402f';
-    ctx.lineWidth=2;
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([6,5]);
     ctx.strokeRect(x+2,2,w-4,h-4);
-    ctx.fillStyle= alive ? '#ece4d0' : '#665f4f';
-    ctx.font="700 12px 'Rajdhani', sans-serif";
+    ctx.setLineDash([]);
+    ctx.fillStyle='#ece4d0aa';
+    ctx.font="700 11px 'Rajdhani', sans-serif";
     ctx.textAlign='center';
-    ctx.fillText('MARKAS', x+w/2, base.y-40);
-    drawHpBar(x+w/2-28,base.y-30,56,6,base.hp,base.maxHp);
+    ctx.fillText('ZONA AMAN', x+w/2, 18);
+  }
+
+  function octagonPath(ctx,x,y,r){
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a=Math.PI/8 + i*Math.PI/4;
+      const px=x+Math.cos(a)*r, py=y+Math.sin(a)*r;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+  }
+
+  // Nexus: segi delapan, menyerang seperti menara
+  function drawNexus(n){
+    const ctx=E.ctx;
+    const alive=n.hp>0, isPlayer=n.team==='player';
+    octagonPath(ctx,n.x,n.y,n.radius);
+    ctx.fillStyle = alive ? (isPlayer?'#2b4f6e':'#6e2b23') : '#333';
+    ctx.fill();
+    ctx.lineWidth=3;
+    ctx.strokeStyle = alive ? (isPlayer?'#3f7fb0':'#b2402f') : '#555';
+    ctx.stroke();
+    if(alive){
+      octagonPath(ctx,n.x,n.y,n.radius*0.55);
+      ctx.strokeStyle = isPlayer ? '#8fb8dc' : '#e0917f';
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+    }
+    ctx.fillStyle= alive ? '#ece4d0' : '#665f4f';
+    ctx.font="700 11px 'Rajdhani', sans-serif";
+    ctx.textAlign='center';
+    ctx.fillText('NEXUS', n.x, n.y-n.radius-18);
+    drawHpBar(n.x-28,n.y-n.radius-14,56,6,n.hp,n.maxHp);
   }
 
   function drawTower(t){
@@ -229,14 +263,33 @@ window.Engine = window.Engine || {};
     ctx.strokeStyle=HL.color;
     ctx.lineWidth=HL.lineWidth;
     if(t.type==='base'){
-      const w=L.BASE_W, x = t.team==='player' ? 0 : L.CANVAS_W-w;
-      ctx.strokeRect(x+5,5,w-10,L.CANVAS_H-10);
+      octagonPath(ctx,t.x,t.y,t.radius+6);
+      ctx.stroke();
     } else {
       const r = t.type==='hero' ? 21 : t.type==='tower' ? t.radius+5 : t.type==='monster' ? 16 : 12;
       ctx.beginPath();
       ctx.arc(t.x,t.y,r,0,Math.PI*2);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // Timer respawn hero pemain di layar (bukan di dunia) — tetap terlihat walau
+  // kamera tidak berada di dekat titik spawn.
+  function drawRespawnOverlay(){
+    const h=E.state.playerHero;
+    if(h.hp>0) return;
+    const ctx=E.ctx, L=E.layout;
+    ctx.save();
+    ctx.fillStyle='rgba(8,10,6,0.45)';
+    ctx.fillRect(0,0,L.VIEWPORT_W,L.VIEWPORT_H);
+    ctx.textAlign='center';
+    ctx.fillStyle='#ece4d0';
+    ctx.font="600 16px 'Rajdhani', sans-serif";
+    ctx.fillText('BANGKIT DALAM', L.VIEWPORT_W/2, L.VIEWPORT_H/2-24);
+    ctx.fillStyle='#e4b662';
+    ctx.font="700 56px 'Rajdhani', sans-serif";
+    ctx.fillText(Math.ceil(h.respawnTimer)+'s', L.VIEWPORT_W/2, L.VIEWPORT_H/2+30);
     ctx.restore();
   }
 
@@ -250,8 +303,10 @@ window.Engine = window.Engine || {};
     ctx.save();
     ctx.translate(-s.camera.x, -s.camera.y);
     drawBg();
-    drawBase(s.playerBase,true);
-    drawBase(s.enemyBase,false);
+    drawSafeZone(true);
+    drawSafeZone(false);
+    drawNexus(s.playerBase);
+    drawNexus(s.enemyBase);
     for(const t of s.playerTowers) drawTower(t);
     for(const t of s.enemyTowers) drawTower(t);
     for(const m of s.playerMinions) drawMinion(m);
@@ -264,6 +319,8 @@ window.Engine = window.Engine || {};
     drawFlashes();
     drawEffects();
     ctx.restore();
+
+    drawRespawnOverlay();
 
     // minimap digambar SETELAH restore supaya posisinya tetap di layar,
     // tidak ikut bergeser bersama kamera.

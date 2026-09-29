@@ -3,7 +3,7 @@
   ======================
   Pergerakan hero pemain (baca input lewat Engine.Input), AI hero musuh,
   pergerakan minion, kemunculan gelombang (dengan pertumbuhan stat),
-  respawn hutan/hero, dan regenerasi dekat markas.
+  respawn hutan/hero, dan regenerasi di safe zone.
 */
 window.Engine = window.Engine || {};
 
@@ -54,17 +54,23 @@ window.Engine = window.Engine || {};
   function updateEnemyAI(dt){
     const s=E.state, hero=s.enemyHero;
     if(hero.hp<=0) return;
-    if(hero.hp < hero.maxHp*0.3 && E.util.dist(hero,E.layout.ENEMY_BASE)>40){
-      moveToward(hero,E.layout.ENEMY_BASE,dt);
-      E.Combat.updateEnemyAbilities(hero,null);
-      return;
+    // HP < 30% -> mundur ke safe zone sendiri dan tinggal di sana sampai HP >= 80%
+    if(hero.hp < hero.maxHp*0.3) hero.retreating=true;
+    if(hero.retreating){
+      const inSafe = E.util.inOwnSafeZone(hero);
+      if(inSafe && hero.hp>=hero.maxHp*0.8) hero.retreating=false;
+      else {
+        if(!inSafe) moveToward(hero,E.layout.ENEMY_SPAWN,dt);
+        E.Combat.updateEnemyAbilities(hero,null);
+        return;
+      }
     }
     const target=E.Combat.nearestEnemyWithin(hero,260);
     if(target){
       const d=E.util.dist(hero,target);
       if(d>hero.range*0.85) moveToward(hero,target,dt);
     } else {
-      moveToward(hero,{x:E.layout.PLAYER_BASE.x,y:hero.y},dt);
+      moveToward(hero,{x:E.layout.PLAYER_NEXUS.x,y:hero.y},dt);
     }
     E.Combat.updateEnemyAbilities(hero,target);
   }
@@ -85,7 +91,7 @@ window.Engine = window.Engine || {};
 
   function spawnWave(team,waveNumber){
     const s=E.state;
-    const baseX = team==='player' ? 90 : 870;
+    const baseX = E.layout.WAVE_SPAWN_X[team];
     const list = team==='player' ? s.playerMinions : s.enemyMinions;
     const comp = window.WAVE_COMPOSITION;
     const growth = window.MINION_GROWTH || {hpPerWave:0,dmgPerWave:0,speedPerWave:0};
@@ -123,17 +129,18 @@ window.Engine = window.Engine || {};
           const spawn = hero.team==='player' ? E.layout.PLAYER_SPAWN : E.layout.ENEMY_SPAWN;
           hero.x=spawn.x; hero.y=spawn.y;
           hero.facing = hero.desiredAngle = (hero.team==='player' ? 0 : Math.PI);
+          hero.retreating = false;
         }
       }
     }
   }
 
+  // Hero memulihkan HP selama berada di dalam safe zone timnya sendiri
   function updateRegen(dt){
-    const s=E.state, CFG=E.layout.CFG;
-    if(s.playerHero.hp>0 && E.util.dist(s.playerHero,E.layout.PLAYER_BASE)<CFG.baseRegenRadius)
-      s.playerHero.hp=Math.min(s.playerHero.maxHp,s.playerHero.hp+CFG.baseRegenRate*dt);
-    if(s.enemyHero.hp>0 && E.util.dist(s.enemyHero,E.layout.ENEMY_BASE)<CFG.baseRegenRadius)
-      s.enemyHero.hp=Math.min(s.enemyHero.maxHp,s.enemyHero.hp+CFG.baseRegenRate*dt);
+    const s=E.state, rate=E.layout.SAFE.regenRate;
+    for(const hero of [s.playerHero,s.enemyHero]){
+      if(hero.hp>0 && E.util.inOwnSafeZone(hero)) hero.hp=Math.min(hero.maxHp,hero.hp+rate*dt);
+    }
   }
 
   function updateBuffs(dt){

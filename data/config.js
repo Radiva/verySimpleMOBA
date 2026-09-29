@@ -11,7 +11,7 @@
   Supaya kamu bisa mengubah peta secara EKSTREM (peta sangat lebar,
   sangat tinggi, jalur dipindah, menara ditambah, dsb) tanpa harus
   menghitung ulang koordinat piksel satu-satu, posisi setiap elemen
-  peta (markas, menara, titik spawn, batas jalur) ditulis sebagai
+  peta (nexus, menara, titik spawn, batas jalur) ditulis sebagai
   PERSENTASE dari ukuran PETA ("canvasW"/"canvasH"), bukan piksel
   absolut:
     xPct: 0   = paling kiri peta      xPct: 1   = paling kanan
@@ -20,7 +20,7 @@
 
   Artinya: ubah "canvasW"/"canvasH" jadi ukuran ekstrem apa pun (mis.
   1600 x 300 untuk jalur sangat panjang, atau 500 x 900 untuk peta
-  vertikal), dan seluruh markas/menara/spawn akan otomatis mengikuti
+  vertikal), dan seluruh nexus/menara/spawn akan otomatis mengikuti
   proporsi barunya. Kamu juga tetap bebas mengubah tiap xPct/yPct
   satu-satu untuk tata letak yang benar-benar custom.
 
@@ -58,15 +58,36 @@ window.GAME_CONFIG = {
     ]
   },
 
-  // --- Markas (nexus) ---
-  baseHp: 1500,
-  baseWidthPct: 0.073,     // lebar markas, sebagai persentase dari canvasW
-  playerBase: { xPct: 0.036, yPct: 0.5 },
-  enemyBase:  { xPct: 0.964, yPct: 0.5 },
+  // --- Nexus (bangunan utama; hancur = kalah) ---
+  // Berbentuk segi delapan dan MENYERANG seperti menara: memprioritaskan minion
+  // musuh dulu, baru hero. Letaknya di depan safe zone (lihat di bawah).
+  nexus: {
+    hp: 1500,
+    dmg: 45,
+    range: 130,
+    atkInterval: 1.1,
+    radius: 26             // jari-jari segi delapan (piksel)
+  },
+  playerNexus: { xPct: 0.125, yPct: 0.5 },
+  enemyNexus:  { xPct: 0.875, yPct: 0.5 },
 
-  // --- Titik muncul (respawn) hero ---
-  playerSpawn: { xPct: 0.115, yPct: 0.5 },
-  enemySpawn:  { xPct: 0.885, yPct: 0.5 },
+  // --- Safe zone (zona aman, TERPISAH dari nexus & lebih dalam darinya) ---
+  // Jalur di tepi peta di belakang nexus tiap sisi. Hero muncul (spawn/respawn)
+  // di sini, memulihkan HP tiap detik selama berada di dalamnya, dan tidak bisa
+  // diserang selama protectHeroes: true (hero di dalam safe zone juga tidak bisa
+  // menyerang atau memakai kemampuan serangan, supaya tidak curang).
+  safeZone: {
+    widthPct: 0.073,       // lebar zona, persentase dari canvasW
+    regenRate: 25,         // HP per detik
+    protectHeroes: true
+  },
+
+  // --- Titik muncul (respawn) hero — harus berada di dalam safe zone ---
+  playerSpawn: { xPct: 0.036, yPct: 0.5 },
+  enemySpawn:  { xPct: 0.964, yPct: 0.5 },
+
+  // --- Titik muncul minion tiap gelombang (persentase dari canvasW) ---
+  waveSpawnXPct: { player: 0.17, enemy: 0.83 },
 
   // --- Batas jalur (area gerak vertikal hero & jalur minion) ---
   laneBounds: { topPct: 0.15, bottomPct: 0.85 },
@@ -110,16 +131,14 @@ window.GAME_CONFIG = {
 
   // --- Prioritas serangan hero pemain (bisa diganti saat bermain lewat 2 tombol/shortcut) ---
   //   type   : 'minion' | 'hero' | 'building'   (urutan ganti: minion -> hero -> building -> minion)
-  //   status : 'lowest' | 'highest'              (HP terendah / tertinggi)
+  //   status : 'lowest' | 'highest' | 'lowestPct' | 'highestPct'
+  //            (urutan ganti: HP terendah -> HP tertinggi -> HP% terendah -> HP% tertinggi)
   defaultPriority: { type: 'minion', status: 'lowest' },
 
   // --- Gelombang minion jalur ---
   waveInterval: 9,         // jeda antar gelombang setelah gelombang pertama
   firstWaveDelay: 3,       // jeda sebelum gelombang pertama muncul
 
-  // --- Regenerasi hero dekat markas sendiri ---
-  baseRegenRate: 25,       // HP per detik
-  baseRegenRadius: 130,    // jarak dari markas agar regen aktif
 
   // --- Respawn hero setelah mati ---
   heroRespawnBase: 5,      // detik dasar

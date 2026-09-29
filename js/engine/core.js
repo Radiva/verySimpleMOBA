@@ -35,6 +35,13 @@ window.Engine = window.Engine || {};
       atkTimer:0,radius:20};
   }
 
+  // Nexus: bangunan utama (type 'base' di kode) — punya stat serang seperti menara
+  function makeNexus(team,pos){
+    const N=E.layout.NEXUS;
+    return {type:'base',team,x:pos.x,y:pos.y,hp:N.hp,maxHp:N.hp,
+      dmg:N.dmg,range:N.range,atkInterval:N.atkInterval,atkTimer:0,radius:N.radius};
+  }
+
   function spawnCampMonster(camp){
     const def = window.MONSTER_DEFS[camp.monster];
     return {
@@ -57,8 +64,8 @@ window.Engine = window.Engine || {};
 
     s.playerTowers = E.layout.PLAYER_TOWER_DEFS.map(pos=>makeTower('player',pos));
     s.enemyTowers = E.layout.ENEMY_TOWER_DEFS.map(pos=>makeTower('enemy',pos));
-    s.playerBase = {type:'base',team:'player',x:E.layout.PLAYER_BASE.x,y:E.layout.PLAYER_BASE.y,hp:CFG.baseHp,maxHp:CFG.baseHp};
-    s.enemyBase = {type:'base',team:'enemy',x:E.layout.ENEMY_BASE.x,y:E.layout.ENEMY_BASE.y,hp:CFG.baseHp,maxHp:CFG.baseHp};
+    s.playerBase = makeNexus('player',E.layout.PLAYER_NEXUS);
+    s.enemyBase = makeNexus('enemy',E.layout.ENEMY_NEXUS);
 
     s.jungleMonsters = E.layout.RESOLVED_CAMPS.map(spawnCampMonster);
     s.jungleRespawns = {};
@@ -121,7 +128,7 @@ window.Engine = window.Engine || {};
     }
   }
 
-  window.Engine.Core = { createHero, makeTower, spawnCampMonster, resetGame };
+  window.Engine.Core = { createHero, makeTower, makeNexus, spawnCampMonster, resetGame };
 
   // API publik yang dipakai js/main.js
   window.GameEngine = {

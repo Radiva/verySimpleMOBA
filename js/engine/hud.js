@@ -53,13 +53,16 @@ window.Engine = window.Engine || {};
   /* ---------------- Tombol prioritas serangan ---------------- */
   const TYPE_ORDER = ['minion','hero','building'];
   const TYPE_LABELS = {minion:'Minion', hero:'Hero', building:'Bangunan'};
+  // urutan ganti: HP terendah -> HP tertinggi -> HP% terendah -> HP% tertinggi -> ...
+  const STATUS_ORDER = ['lowest','highest','lowestPct','highestPct'];
+  const STATUS_LABELS = {lowest:'HP Terendah', highest:'HP Tertinggi', lowestPct:'HP% Terendah', highestPct:'HP% Tertinggi'};
 
   function updatePriorityButtons(){
     const p=E.state.priority, b=E.Input.getBindings();
     const typeBtn=el('btn-priority-type');
     const statusBtn=el('btn-priority-status');
     if(typeBtn) typeBtn.textContent='Prioritas: '+TYPE_LABELS[p.type]+' ['+(b.priorityType||'').toUpperCase()+']';
-    if(statusBtn) statusBtn.textContent='Fokus: HP '+(p.status==='lowest'?'Terendah':'Tertinggi')+' ['+(b.priorityStatus||'').toUpperCase()+']';
+    if(statusBtn) statusBtn.textContent='Fokus: '+STATUS_LABELS[p.status]+' ['+(b.priorityStatus||'').toUpperCase()+']';
   }
 
   // Urutan jenis target: minion -> hero -> building -> minion -> ...
@@ -68,9 +71,10 @@ window.Engine = window.Engine || {};
     E.state.priority.type = TYPE_ORDER[(idx+1)%TYPE_ORDER.length];
     updatePriorityButtons();
   }
-  // Urutan status: HP terendah <-> HP tertinggi
+  // Urutan status: HP terendah -> HP tertinggi -> HP% terendah -> HP% tertinggi
   function cyclePriorityStatus(){
-    E.state.priority.status = E.state.priority.status==='lowest' ? 'highest' : 'lowest';
+    const idx = STATUS_ORDER.indexOf(E.state.priority.status);
+    E.state.priority.status = STATUS_ORDER[(idx+1)%STATUS_ORDER.length];
     updatePriorityButtons();
   }
 
@@ -102,6 +106,10 @@ window.Engine = window.Engine || {};
     el('e-buff-tag').style.display = s.enemyHero.buffTimer>0 ? 'inline-block' : 'none';
     el('e-buff-tag').textContent = 'BUFF '+Math.ceil(s.enemyHero.buffTimer)+'s';
 
+    // timer respawn di panel info atas
+    const rt=(h,id)=>{ const t=el(id); if(!t) return; t.style.display = h.hp<=0 ? 'inline-block' : 'none'; t.textContent='Bangkit dalam '+Math.ceil(h.respawnTimer)+'s'; };
+    rt(s.playerHero,'p-respawn-tag'); rt(s.enemyHero,'e-respawn-tag');
+
     el('pb-hp').style.width=Math.max(0,(s.playerBase.hp/s.playerBase.maxHp*100))+'%';
     el('eb-hp').style.width=Math.max(0,(s.enemyBase.hp/s.enemyBase.maxHp*100))+'%';
 
@@ -114,8 +122,8 @@ window.Engine = window.Engine || {};
     if(s.game.state==='over'){
       el('over-title').textContent = s.game.winner==='player' ? 'MENANG!' : 'KALAH';
       el('over-sub').textContent = s.game.winner==='player'
-        ? 'Markas musuh berhasil dihancurkan.'
-        : 'Markas kita hancur diserbu musuh.';
+        ? 'Nexus musuh berhasil dihancurkan.'
+        : 'Nexus kita hancur diserbu musuh.';
       el('stat-kills').textContent = s.stats.playerKills+' - '+s.stats.enemyKills;
       el('stat-level').textContent = s.playerHero.level;
       el('stat-time').textContent = mm+':'+ss;

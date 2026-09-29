@@ -32,7 +32,7 @@ window.Engine = window.Engine || {};
   const ACTION_LABELS = {
     up:'Gerak Atas', down:'Gerak Bawah', left:'Gerak Kiri', right:'Gerak Kanan',
     ability1:'Kemampuan 1', ability2:'Kemampuan 2', ability3:'Kemampuan 3', ability4:'Kemampuan 4',
-    priorityType:'Prioritas Jenis Target', priorityStatus:'Prioritas Status HP'
+    priorityType:'Prioritas Jenis Target', priorityStatus:'Prioritas Status (HP / HP%)'
   };
   const STORAGE_KEY = 'garisdepan_keybindings_v1';
 

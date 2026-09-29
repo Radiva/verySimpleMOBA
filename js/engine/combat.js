@@ -12,8 +12,10 @@ window.Engine = window.Engine || {};
 
   function allTargets(){
     const s=E.state, arr=[];
-    if(s.playerHero.hp>0) arr.push(s.playerHero);
-    if(s.enemyHero.hp>0) arr.push(s.enemyHero);
+    // hero di dalam safe zone-nya sendiri tidak bisa dijadikan target (kalau protectHeroes)
+    const covered = h => E.layout.SAFE.protectHeroes && E.util.inOwnSafeZone(h);
+    if(s.playerHero.hp>0 && !covered(s.playerHero)) arr.push(s.playerHero);
+    if(s.enemyHero.hp>0 && !covered(s.enemyHero)) arr.push(s.enemyHero);
     for(const m of s.playerMinions) if(m.hp>0) arr.push(m);
     for(const m of s.enemyMinions) if(m.hp>0) arr.push(m);
     for(const m of s.jungleMonsters) if(m.hp>0) arr.push(m);
@@ -40,7 +42,7 @@ window.Engine = window.Engine || {};
   //  - monster hutan hanya menyerang hero (bukan minion/menara)
   function candidateTargetsFor(u){
     let list = allTargets().filter(t=>t.team!==u.team && E.util.dist(u,t)<=u.range);
-    if(u.type==='tower') list = list.filter(t=>t.type!=='monster');
+    if(u.type==='tower' || u.type==='base') list = list.filter(t=>t.type!=='monster');
     if(u.type==='minion') list = list.filter(t=>t.type!=='monster');
     if(u.type==='monster') list = list.filter(t=>t.type==='hero');
     return list;
@@ -49,7 +51,7 @@ window.Engine = window.Engine || {};
   function findTargetFor(u){
     const candidates = candidateTargetsFor(u);
     if(candidates.length===0) return null;
-    if(u.type==='tower'){
+    if(u.type==='tower' || u.type==='base'){ // nexus menyerang seperti menara: minion dulu
       const minions=candidates.filter(t=>t.type==='minion');
       if(minions.length) return minions.reduce((a,b)=> E.util.dist(u,a)<=E.util.dist(u,b)?a:b);
     }
@@ -60,8 +62,9 @@ window.Engine = window.Engine || {};
   // tombol di HUD (Engine.state.priority — lihat js/engine/hud.js):
   //   - "type"   : jenis target diutamakan lebih dulu, lalu berputar
   //                minion -> hero -> building -> minion.
-  //   - "status" : di antara target sejenis, pilih HP 'lowest' atau
-  //                'highest'. Jarak dipakai hanya sebagai pemecah seri.
+  //   - "status" : di antara target sejenis, pilih berdasarkan HP absolut
+  //                ('lowest'/'highest') atau persentase HP ('lowestPct'/
+  //                'highestPct'). Jarak hanya pemecah seri.
   // Dipakai untuk serangan biasa hero pemain dan kemampuan bertipe
   // "snipe" miliknya — unit lain (musuh AI, minion, menara, monster)
   // tetap memakai findTargetFor() di atas (target terdekat).
@@ -82,8 +85,17 @@ window.Engine = window.Engine || {};
     for(const cat of order){
       const group = candidates.filter(t=>categoryOf(t)===cat);
       if(group.length){
+        // nilai pengurutan (kecil = diutamakan) sesuai status prioritas
+        const key = t => {
+          switch(s.priority.status){
+            case 'highest':    return -t.hp;
+            case 'lowestPct':  return t.hp/t.maxHp;
+            case 'highestPct': return -(t.hp/t.maxHp);
+            default:           return t.hp;            // 'lowest'
+          }
+        };
         group.sort((a,b)=>{
-          const diff = s.priority.status==='lowest' ? a.hp-b.hp : b.hp-a.hp;
+          const diff = key(a)-key(b);
           return diff!==0 ? diff : E.util.dist(u,a)-E.util.dist(u,b);
         });
         return group[0];
@@ -160,9 +172,13 @@ window.Engine = window.Engine || {};
     for(const m of s.jungleMonsters) if(m.hp>0) attackers.push(m);
     for(const t of s.playerTowers) if(t.hp>0) attackers.push(t);
     for(const t of s.enemyTowers) if(t.hp>0) attackers.push(t);
+    if(s.playerBase.hp>0) attackers.push(s.playerBase);
+    if(s.enemyBase.hp>0) attackers.push(s.enemyBase);
 
     for(const u of attackers){
       if(u.atkTimer>0){ u.atkTimer-=dt; continue; }
+      // hero di dalam safe zone tidak menyerang (zona aman, bukan tempat menembak)
+      if(u.type==='hero' && E.layout.SAFE.protectHeroes && E.util.inOwnSafeZone(u)) continue;
       const t = (u===s.playerHero) ? pickTargetByPriority(u,u.range) : findTargetFor(u);
       if(t){
         // hero menghadap target yang sedang diserang (panah arah ikut berputar)
@@ -179,6 +195,7 @@ window.Engine = window.Engine || {};
   function useAbility(hero, abilityIndex){
     const a = hero.abilities[abilityIndex];
     if(!a || hero.hp<=0 || hero.abilityTimers[abilityIndex]>0) return false;
+    if(a.type!=='heal' && E.layout.SAFE.protectHeroes && E.util.inOwnSafeZone(hero)) return false;
     const dmgMult = hero.buffTimer>0 ? hero.buffDmgMult : 1;
 
     if(a.type==='aoe'){

@@ -230,6 +230,12 @@ h1,h2,h3,.hero-name,.brand{
   border-radius:5px;padding:1px 6px;letter-spacing:.03em;
 }
 .hero-panel.enemy .buff-tag{align-self:flex-end;}
+.respawn-tag{
+  align-self:flex-start;
+  font-size:.7rem;font-weight:700;color:#fff;background:var(--hp-bad);
+  border-radius:5px;padding:1px 7px;letter-spacing:.03em;
+}
+.hero-panel.enemy .respawn-tag{align-self:flex-end;}
 
 #field-wrap{
   position:relative;

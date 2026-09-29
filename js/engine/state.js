@@ -25,17 +25,25 @@ window.Engine = window.Engine || {};
   const CANVAS_W = CFG.canvasW, CANVAS_H = CFG.canvasH;
   const pctPoint = p => ({ x: p.xPct*CANVAS_W, y: p.yPct*CANVAS_H });
 
+  // Nexus (bangunan utama, menyerang seperti menara) & safe zone (zona aman di
+  // belakang nexus) — nilai bawaan dipakai bila field-nya tidak ada di config.js
+  const NEXUS_CFG = Object.assign({hp:CFG.baseHp||1500, dmg:45, range:130, atkInterval:1.1, radius:26}, CFG.nexus);
+  const SAFE_CFG = Object.assign({widthPct:0.073, regenRate:25, protectHeroes:true}, CFG.safeZone);
+  const WAVE_X = Object.assign({player:0.17, enemy:0.83}, CFG.waveSpawnXPct);
+
   const layout = {
     CFG, CANVAS_W, CANVAS_H,
+    NEXUS: NEXUS_CFG, SAFE: SAFE_CFG,
     VIEWPORT_W: CFG.viewport.width,
     VIEWPORT_H: CFG.viewport.height,
-    PLAYER_BASE: pctPoint(CFG.playerBase),
-    ENEMY_BASE: pctPoint(CFG.enemyBase),
+    PLAYER_NEXUS: pctPoint(CFG.playerNexus || {xPct:0.125,yPct:0.5}),
+    ENEMY_NEXUS: pctPoint(CFG.enemyNexus || {xPct:0.875,yPct:0.5}),
     PLAYER_SPAWN: pctPoint(CFG.playerSpawn),
     ENEMY_SPAWN: pctPoint(CFG.enemySpawn),
     LANE_TOP: CFG.laneBounds.topPct*CANVAS_H,
     LANE_BOTTOM: CFG.laneBounds.bottomPct*CANVAS_H,
-    BASE_W: CFG.baseWidthPct*CANVAS_W,
+    SAFE_W: SAFE_CFG.widthPct*CANVAS_W,
+    WAVE_SPAWN_X: { player: WAVE_X.player*CANVAS_W, enemy: WAVE_X.enemy*CANVAS_W },
     WAVE_YS: CFG.waveYOffsetsPct.map(p=>p*CANVAS_H),
     PLAYER_TOWER_DEFS: CFG.towers.player.map(pctPoint),
     ENEMY_TOWER_DEFS: CFG.towers.enemy.map(pctPoint),
@@ -56,6 +64,8 @@ window.Engine = window.Engine || {};
     effDmg: (u) => u.buffTimer>0 ? u.dmg*u.buffDmgMult : u.dmg,
     effSpeed: (u) => u.buffTimer>0 ? u.speed*u.buffSpeedMult : u.speed,
     effAtkInterval: (u) => u.buffTimer>0 ? u.atkInterval/u.buffAtkMult : u.atkInterval,
+    // apakah unit berada di dalam safe zone timnya sendiri (jalur di tepi peta)
+    inOwnSafeZone: (u) => u.team==='player' ? u.x<=layout.SAFE_W : u.x>=CANVAS_W-layout.SAFE_W,
     // putar sudut "cur" menuju "target" lewat jalur terpendek, maksimal maxStep radian
     turnToward: (cur,target,maxStep) => {
       const diff = Math.atan2(Math.sin(target-cur), Math.cos(target-cur));
