@@ -34,7 +34,11 @@ garis-depan/
 
 - **W A S D** — gerak
 - **1 / 2 / 3 / 4** — pakai kemampuan sesuai urutan `abilities` hero (hero
-  dengan 2 kemampuan hanya memakai tombol 1 dan 2, dst.)
+  dengan 2 kemampuan hanya memakai tombol 1 dan 2, dst.) — hanya bisa
+  dipakai kalau kemampuannya sudah dipelajari, lihat "Leveling skill"
+- **Z / X / C / V** — pakai 1 poin skill untuk menaikkan level kemampuan
+  1/2/3/4 (tombol TERPISAH dari 1/2/3/4 supaya "memakai" dan "menaikkan
+  level" tidak bentrok)
 - **Q** — ganti prioritas jenis target (Minion → Hero → Bangunan → Minion)
 - **E** — ganti prioritas status (HP Terendah ↔ HP Tertinggi)
 - Serangan biasa otomatis menyerang musuh terdekat saat dalam jangkauan
@@ -43,13 +47,53 @@ Semua tombol di atas bisa diganti lewat tombol **"⚙ Atur Tombol"** di
 layar pemilihan hero — pilih aksi, tekan "Ubah", lalu tekan tombol baru
 yang diinginkan. Pengaturan tersimpan otomatis di browser (localStorage)
 sehingga tetap berlaku walau halaman ditutup dan dibuka lagi. Tombol
-"Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4 + Q/E.
+"Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4 + Z/X/C/V + Q/E.
 
 Setiap kotak kemampuan di HUD menampilkan **ikon/logo kemampuannya**
-(dari field `icon` di `data/heroes.js`) dengan **huruf tombolnya**
-kecil di salah satu sudut kotak, dan **angka hitung mundur** menutupi
-ikon saat sedang cooldown (bukan cuma efek glow) — begitu angkanya
-hilang dan kotak menyala terang, kemampuan siap dipakai lagi.
+(dari field `icon` di `data/heroes.js`) dengan **huruf tombol pakai**
+di sudut kanan-bawah, **level skill saat ini** (mis. `Lv 2/5`) di
+sudut kiri-atas, dan **angka hitung mundur** menutupi ikon saat sedang
+cooldown (bukan cuma efek glow) — begitu angkanya hilang dan kotak
+menyala terang, kemampuan siap dipakai lagi. Kemampuan yang belum
+dipelajari (level skill 0) tampil pudar dengan ikon 🔒 dan tidak bisa
+dipakai sama sekali. Kotak berpendar **hijau** dengan huruf tombol
+naik-level di sudut kiri-bawah kalau kamu sedang punya poin skill yang
+bisa dipakai untuk kemampuan itu sekarang juga.
+
+## Leveling skill (poin skill, terpisah dari level hero)
+
+Kemampuan **tidak lagi otomatis menguat** mengikuti level hero. Tiap
+kemampuan punya **level skill sendiri** (0 = belum dipelajari, tidak
+bisa dipakai) yang harus dinaikkan manual pakai **poin skill**:
+
+- Hero mendapat poin skill setiap naik level hero — jumlahnya diatur
+  lewat `skillPoints.perHeroLevel` di `data/config.js` (bawaan: 1 poin
+  per level).
+- Tekan **Z / X / C / V** untuk memakai 1 poin skill menaikkan level
+  kemampuan 1/2/3/4. Panel hero pemain menampilkan **"N Poin Skill"**
+  kalau ada poin yang belum dipakai.
+- Hero musuh (AI) otomatis membelanjakan poin skillnya sendiri begitu
+  ada kemampuan yang memenuhi syarat.
+
+Dua jeda yang bisa diatur per kemampuan di `data/heroes.js` (atau lewat
+nilai bawaan `skillPoints` di `data/config.js` kalau tidak ditulis per
+kemampuan):
+
+- **`unlockAtHeroLevel`** — "jeda dari level awal": level hero minimum
+  sebelum poin **pertama** boleh masuk ke kemampuan ini. Cocok untuk
+  meniru kemampuan andalan/ultimate yang baru terbuka belakangan.
+- **`levelGap`** — "jeda setelah poin ditambahkan": minimal berapa
+  level hero harus lewat sejak poin **terakhir** masuk ke kemampuan
+  yang sama sebelum boleh menambah poin lagi ke kemampuan itu. Nilai
+  bawaan 1 secara alami membatasi maksimal 1 poin per kemampuan setiap
+  kali hero naik level (gaya MOBA umum); naikkan jadi 2 atau lebih
+  untuk memaksa pemain menyebar poinnya ke kemampuan lain dulu.
+- **`maxSkillLevel`** — batas level tertinggi kemampuan ini bisa
+  dinaikkan. Poin yang tersisa setelah sebuah kemampuan mentok tidak
+  hilang — bisa dipakai untuk kemampuan lain.
+
+Damage/heal kemampuan dihitung dari **level skill**, bukan level hero:
+`baseDamage + (level skill saat ini - 1) * perLevel`.
 
 ## Prioritas serangan
 
@@ -189,6 +233,10 @@ Setiap hero punya field `abilities` — sebuah **array**, boleh berisi
 1 sampai 4 objek kemampuan. Urutan di array menentukan tombolnya:
 `abilities[0]` → tombol **1**, `abilities[1]` → tombol **2**, dst.
 
+Setiap kemampuan juga bisa diberi field opsional untuk mengatur
+leveling-nya (lihat bagian "Leveling skill" di atas): `maxSkillLevel`,
+`unlockAtHeroLevel`, `levelGap`.
+
 Tiga tipe kemampuan siap pakai:
 
 | type    | efek                                              |
@@ -236,3 +284,9 @@ Panel hero pemain dan musuh masing-masing punya bar XP dengan angka
 persis (mis. `120 / 200 XP`) di bawah bar HP. Setelah mencapai level
 maksimum (`heroMaxLevel` di `config.js`), bar menampilkan **LEVEL
 MAKS** dan hero berhenti mengumpulkan XP.
+
+Naik level hero **tidak lagi otomatis memperkuat kemampuan** — yang
+otomatis bertambah hanya HP maksimum dan damage serangan biasa
+(`heroLevelHpGain`/`heroLevelDmgGain`), ditambah pemberian poin skill.
+Kekuatan kemampuan sendiri diatur lewat sistem "Leveling skill" di
+atas.

@@ -14,6 +14,11 @@
     up, down, left, right        — gerak (default W A S D)
     ability1..ability4           — kemampuan hero ke-1 s.d. ke-4
                                     (default tombol 1 2 3 4)
+    skillUp1..skillUp4            — naikkan level skill ke-1 s.d. ke-4
+                                    pakai 1 poin skill (default Z X C V) —
+                                    tombol TERPISAH dari ability1..4 supaya
+                                    "pakai kemampuan" dan "naikkan levelnya"
+                                    tidak bentrok
 
   js/main.js memanggil fungsi-fungsi ini lewat window.GameEngine
   (lihat core.js) untuk membangun layar "Atur Tombol".
@@ -27,11 +32,13 @@ window.Engine = window.Engine || {};
   const DEFAULTS = {
     up:'w', down:'s', left:'a', right:'d',
     ability1:'1', ability2:'2', ability3:'3', ability4:'4',
+    skillUp1:'z', skillUp2:'x', skillUp3:'c', skillUp4:'v',
     priorityType:'q', priorityStatus:'e'
   };
   const ACTION_LABELS = {
     up:'Gerak Atas', down:'Gerak Bawah', left:'Gerak Kiri', right:'Gerak Kanan',
     ability1:'Kemampuan 1', ability2:'Kemampuan 2', ability3:'Kemampuan 3', ability4:'Kemampuan 4',
+    skillUp1:'Naikkan Skill 1', skillUp2:'Naikkan Skill 2', skillUp3:'Naikkan Skill 3', skillUp4:'Naikkan Skill 4',
     priorityType:'Prioritas Jenis Target', priorityStatus:'Prioritas Status (HP / HP%)'
   };
   const STORAGE_KEY = 'garisdepan_keybindings_v1';
@@ -100,6 +107,14 @@ window.Engine = window.Engine || {};
       if(key===bindings[action]){
         e.preventDefault();
         if(E.state.game && E.state.game.state==='playing') E.Combat.useAbility(E.state.playerHero, i);
+      }
+    }
+
+    for(let i=0;i<4;i++){
+      const action='skillUp'+(i+1);
+      if(key===bindings[action]){
+        e.preventDefault();
+        if(E.state.game && E.state.game.state==='playing') E.Combat.levelUpSkill(E.state.playerHero, i);
       }
     }
   });

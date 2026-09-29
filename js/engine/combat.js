@@ -113,13 +113,68 @@ window.Engine = window.Engine || {};
     const CFG=E.layout.CFG;
     if(!hero || hero.level>=CFG.heroMaxLevel) return;
     hero.xp += amt;
+    const perLevel = (CFG.skillPoints && CFG.skillPoints.perHeroLevel!==undefined) ? CFG.skillPoints.perHeroLevel : 1;
     while(hero.level<CFG.heroMaxLevel && hero.xp>=E.util.xpNeeded(hero.level)){
       hero.xp -= E.util.xpNeeded(hero.level);
       hero.level++;
       hero.maxHp += CFG.heroLevelHpGain; hero.hp=Math.min(hero.maxHp,hero.hp+CFG.heroLevelHpGain);
       hero.dmg += CFG.heroLevelDmgGain;
+      hero.skillPoints += perLevel;
     }
     if(hero.level>=CFG.heroMaxLevel) hero.xp = 0;
+    if(hero.team==='enemy') autoAllocateEnemySkillPoints(hero);
+  }
+
+  /* ---------------- Poin skill (leveling kemampuan) ---------------- */
+  function skillPointCfg(){
+    return Object.assign({defaultMaxLevel:5, defaultUnlockAtHeroLevel:1, defaultLevelGap:1}, E.layout.CFG.skillPoints);
+  }
+  function getSkillMax(a){ return a.maxSkillLevel || skillPointCfg().defaultMaxLevel; }
+  function getSkillUnlock(a){ return a.unlockAtHeroLevel || skillPointCfg().defaultUnlockAtHeroLevel; }
+  function getSkillGap(a){ return a.levelGap || skillPointCfg().defaultLevelGap; }
+
+  // Cek apakah poin skill boleh ditambahkan ke abilities[idx] sekarang.
+  // Tidak mengubah apa pun — hanya memeriksa dan mengembalikan alasan.
+  function canLevelUpSkill(hero, idx){
+    const a = hero.abilities[idx];
+    if(!a) return {ok:false, reason:'invalid'};
+    if(hero.skillPoints<=0) return {ok:false, reason:'no-points'};
+    const lvl = hero.skillLevels[idx];
+    const max = getSkillMax(a);
+    if(lvl>=max) return {ok:false, reason:'maxed'};
+    const unlock = getSkillUnlock(a);
+    if(hero.level<unlock) return {ok:false, reason:'locked', need:unlock};
+    if(lvl>0){
+      const gap = getSkillGap(a);
+      const since = hero.level - hero.skillLastLevelUp[idx];
+      if(since<gap) return {ok:false, reason:'gap', need:gap-since};
+    }
+    return {ok:true};
+  }
+
+  // Benar-benar menambah 1 level skill (memakai 1 poin) kalau memenuhi syarat.
+  function levelUpSkill(hero, idx){
+    const check = canLevelUpSkill(hero, idx);
+    if(!check.ok) return check;
+    hero.skillLevels[idx]++;
+    hero.skillLastLevelUp[idx] = hero.level;
+    hero.skillPoints--;
+    return {ok:true};
+  }
+
+  // AI hero musuh tidak menekan tombol — otomatis habiskan poin skill yang
+  // tersedia begitu ada kemampuan yang memenuhi syarat (skill pertama yang
+  // bisa di-upgrade selalu didahulukan).
+  function autoAllocateEnemySkillPoints(hero){
+    let guard=0;
+    while(hero.skillPoints>0 && guard<20){
+      guard++;
+      let spent=false;
+      for(let i=0;i<hero.abilities.length;i++){
+        if(levelUpSkill(hero,i).ok){ spent=true; break; }
+      }
+      if(!spent) break; // belum ada yang memenuhi syarat — sisa poin menunggu level berikutnya
+    }
   }
 
   function applyBuff(hero,buff){
@@ -194,12 +249,13 @@ window.Engine = window.Engine || {};
   // di sini dan gunakan ability.type sebagai penanda dari data/heroes.js.
   function useAbility(hero, abilityIndex){
     const a = hero.abilities[abilityIndex];
-    if(!a || hero.hp<=0 || hero.abilityTimers[abilityIndex]>0) return false;
+    const skillLvl = hero.skillLevels ? hero.skillLevels[abilityIndex] : 0;
+    if(!a || hero.hp<=0 || !skillLvl || hero.abilityTimers[abilityIndex]>0) return false;
     if(a.type!=='heal' && E.layout.SAFE.protectHeroes && E.util.inOwnSafeZone(hero)) return false;
     const dmgMult = hero.buffTimer>0 ? hero.buffDmgMult : 1;
 
     if(a.type==='aoe'){
-      const dmg=(a.baseDamage+hero.level*a.perLevel)*dmgMult;
+      const dmg=(a.baseDamage+(skillLvl-1)*a.perLevel)*dmgMult;
       for(const t of allTargets()){
         if(t.team!==hero.team && t.type!=='base' && E.util.dist(hero,t)<=a.radius) dealDamage(hero,t,dmg);
       }
@@ -207,14 +263,14 @@ window.Engine = window.Engine || {};
     } else if(a.type==='snipe'){
       const target = hero===E.state.playerHero ? pickTargetByPriority(hero,a.radius) : nearestEnemyWithin(hero,a.radius);
       if(target){
-        const dmg=(a.baseDamage+hero.level*a.perLevel)*dmgMult;
+        const dmg=(a.baseDamage+(skillLvl-1)*a.perLevel)*dmgMult;
         if(hero.facing!==undefined) hero.facing = hero.desiredAngle = Math.atan2(target.y-hero.y, target.x-hero.x);
         dealDamage(hero,target,dmg);
         addFlash(hero,target,true);
       }
       E.state.effects.push({kind:'shot',x:hero.x,y:hero.y,t:0,dur:0.3,color:hero.color});
     } else if(a.type==='heal'){
-      const amt=a.baseDamage+hero.level*a.perLevel;
+      const amt=a.baseDamage+(skillLvl-1)*a.perLevel;
       hero.hp=Math.min(hero.maxHp,hero.hp+amt);
       E.state.effects.push({kind:'heal',x:hero.x,y:hero.y,t:0,dur:0.4,color:hero.color});
     }
@@ -224,7 +280,7 @@ window.Engine = window.Engine || {};
 
   function updateEnemyAbilities(hero,target){
     hero.abilities.forEach((a,idx)=>{
-      if(hero.abilityTimers[idx]>0) return;
+      if(!hero.skillLevels[idx] || hero.abilityTimers[idx]>0) return;
       if(a.type==='heal'){
         if(hero.hp<hero.maxHp*0.7) useAbility(hero,idx);
       } else if(target && target.type==='hero' && a.radius){
@@ -236,6 +292,7 @@ window.Engine = window.Engine || {};
   window.Engine.Combat = {
     allTargets, nearestEnemyWithin, findTargetFor, pickTargetByPriority,
     dealDamage, awardXP, applyBuff, performAutoAttacks,
-    useAbility, updateEnemyAbilities
+    useAbility, updateEnemyAbilities,
+    canLevelUpSkill, levelUpSkill, getSkillMax, getSkillUnlock, getSkillGap
   };
 })();

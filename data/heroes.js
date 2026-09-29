@@ -34,8 +34,28 @@
     - "heal"  : menyembuhkan diri sendiri sejumlah HP.
                 field "radius" diabaikan untuk tipe ini.
 
-  Damage/heal tiap kemampuan dihitung sebagai:
-    baseDamage + (level hero saat ini) * perLevel
+  LEVEL SKILL (terpisah dari level hero): tiap kemampuan punya level
+  sendiri, 0 = belum dipelajari (tidak bisa dipakai sama sekali). Hero
+  mendapat POIN SKILL setiap naik level hero (lihat skillPoints di
+  data/config.js), dan pemain menaikkan skill secara manual lewat
+  tombol Z/X/C/V (bisa diganti di menu Atur Tombol — lihat
+  abilities[0]->Z, abilities[1]->X, dst). Damage/heal dihitung sebagai:
+    baseDamage + (level SKILL saat ini - 1) * perLevel
+  (jadi level skill 1 = baseDamage saja, tiap level tambahan menambah
+  perLevel). Hero musuh (AI) otomatis menaikkan skill pertama yang
+  memenuhi syarat setiap dapat poin.
+
+  Tiap objek "abilities" juga boleh diisi (opsional, kalau tidak ada
+  memakai nilai bawaan dari skillPoints di data/config.js):
+    maxSkillLevel      batas level skill ini (bawaan: defaultMaxLevel)
+    unlockAtHeroLevel  level hero minimum sebelum poin PERTAMA boleh
+                       masuk ke skill ini — "jeda dari level awal"
+                       (bawaan: defaultUnlockAtHeroLevel)
+    levelGap           minimal berapa level hero harus lewat sejak
+                       poin TERAKHIR masuk ke skill ini sebelum boleh
+                       menambah poin lagi ke skill yang sama —
+                       "jeda setelah poin ditambahkan" (bawaan:
+                       defaultLevelGap)
 
   Ingin menambah tipe kemampuan baru (mis. buff tim, dash, dsb)?
   Tambahkan penanganannya pada fungsi useAbility() di js/engine/combat.js —
@@ -55,8 +75,10 @@ window.HERO_DEFS = {
     atkInterval: 0.75,
     speed: 135,
     abilities: [
-      { name: 'Hantaman Bumi', icon: '💥', type: 'aoe', cooldown: 6, radius: 85, baseDamage: 50, perLevel: 8 },
-      { name: 'Regenerasi Baja', icon: '❤️', type: 'heal', cooldown: 14, baseDamage: 60, perLevel: 10 }
+      { name: 'Hantaman Bumi', icon: '💥', type: 'aoe', cooldown: 6, radius: 85, baseDamage: 50, perLevel: 8,
+        unlockAtHeroLevel: 1, levelGap: 1 },
+      { name: 'Regenerasi Baja', icon: '❤️', type: 'heal', cooldown: 14, baseDamage: 60, perLevel: 10,
+        unlockAtHeroLevel: 3, levelGap: 2 } // baru bisa dipelajari mulai level 3, lalu jeda 2 level tiap naik lagi
     ]
   },
 
@@ -72,8 +94,10 @@ window.HERO_DEFS = {
     atkInterval: 0.9,
     speed: 150,
     abilities: [
-      { name: 'Tembakan Tajam', icon: '🎯', type: 'snipe', cooldown: 5, radius: 230, baseDamage: 65, perLevel: 10 },
-      { name: 'Pulih Alami', icon: '❤️', type: 'heal', cooldown: 16, baseDamage: 45, perLevel: 8 }
+      { name: 'Tembakan Tajam', icon: '🎯', type: 'snipe', cooldown: 5, radius: 230, baseDamage: 65, perLevel: 10,
+        unlockAtHeroLevel: 1, levelGap: 1 },
+      { name: 'Pulih Alami', icon: '❤️', type: 'heal', cooldown: 16, baseDamage: 45, perLevel: 8,
+        unlockAtHeroLevel: 3, levelGap: 2 }
     ]
   }
 

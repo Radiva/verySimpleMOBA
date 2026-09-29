@@ -199,14 +199,32 @@ h1,h2,h3,.hero-name,.brand{
 }
 .ability-chip .fill{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);transition:height .1s linear;z-index:0;}
 .ability-chip.ready{border-color:var(--brass-bright);box-shadow:0 0 8px rgba(228,182,98,.5);}
+.ability-chip.locked{border-color:var(--line);opacity:.6;}
+.ability-chip.levelable{border-color:#7ea25a;box-shadow:0 0 8px rgba(126,162,90,.55);}
 .ability-chip .ability-icon{
   position:relative;z-index:1;font-size:1.15rem;line-height:1;
   transition:opacity .15s ease;
 }
+.ability-chip .lock-overlay{
+  position:absolute;z-index:1;font-size:.95rem;opacity:0;pointer-events:none;
+}
+.ability-chip.locked .lock-overlay{opacity:.85;}
 .ability-chip .key-corner{
   position:absolute;right:2px;bottom:1px;z-index:2;
   font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.58rem;
   color:var(--cream);background:rgba(0,0,0,.55);border-radius:3px;
+  padding:0 3px;line-height:1.3;pointer-events:none;
+}
+.ability-chip .skill-lvl-corner{
+  position:absolute;left:2px;top:1px;z-index:2;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.52rem;
+  color:var(--cream-dim);background:rgba(0,0,0,.55);border-radius:3px;
+  padding:0 3px;line-height:1.3;pointer-events:none;
+}
+.ability-chip .levelup-corner{
+  position:absolute;left:2px;bottom:1px;z-index:2;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.58rem;
+  color:#1c2e10;background:#7ea25a;border-radius:3px;
   padding:0 3px;line-height:1.3;pointer-events:none;
 }
 .ability-chip .cd-num{
@@ -216,6 +234,12 @@ h1,h2,h3,.hero-name,.brand{
   color:#fff;text-shadow:0 1px 2px #000;background:rgba(0,0,0,.35);
 }
 .ability-name{font-size:.68rem;color:var(--cream-dim);}
+.skillpoint-badge{
+  align-self:flex-start;
+  font-size:.68rem;font-weight:700;color:#1c2e10;background:#7ea25a;
+  border-radius:5px;padding:2px 7px;letter-spacing:.02em;
+}
+.hero-panel.enemy .skillpoint-badge{align-self:flex-end;}
 .priority-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:1px;}
 /* indikator saja — prioritas hanya diganti lewat shortcut keyboard */
 .priority-chip{

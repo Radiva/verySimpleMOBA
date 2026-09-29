@@ -24,29 +24,47 @@ window.Engine = window.Engine || {};
       chip.innerHTML=
         '<div class="fill"></div>'+
         '<span class="ability-icon">'+(a.icon||'✦')+'</span>'+
+        '<span class="skill-lvl-corner"></span>'+
         '<span class="key-corner"></span>'+
-        '<span class="cd-num"></span>';
+        '<span class="levelup-corner"></span>'+
+        '<span class="cd-num"></span>'+
+        '<span class="lock-overlay">🔒</span>';
       container.appendChild(chip);
     });
   }
 
   function updateAbilityChips(containerId,hero){
     const bindings = E.Input.getBindings();
+    const isPlayerRow = containerId==='p-ability-row';
     hero.abilities.forEach((a,idx)=>{
       const chip=el(containerId+'-'+idx);
       if(!chip) return;
+      const skillLvl = hero.skillLevels[idx];
+      const maxLvl = E.Combat.getSkillMax(a);
+      const learned = skillLvl>0;
       const remain=hero.abilityTimers[idx];
       const fill=chip.querySelector('.fill');
       const icon=chip.querySelector('.ability-icon');
       const keyCorner=chip.querySelector('.key-corner');
       const cdNum=chip.querySelector('.cd-num');
+      const skillCorner=chip.querySelector('.skill-lvl-corner');
+      const levelupCorner=chip.querySelector('.levelup-corner');
       const ready=remain<=0;
-      chip.classList.toggle('ready',ready);
-      fill.style.height = ready ? '0%' : ((remain/a.cooldown)*100)+'%';
+
+      chip.classList.toggle('ready', ready && learned);
+      chip.classList.toggle('locked', !learned);
+      fill.style.height = (ready||!learned) ? '0%' : ((remain/a.cooldown)*100)+'%';
       keyCorner.textContent = (bindings['ability'+(idx+1)]||'').toUpperCase();
-      icon.style.opacity = ready ? '1' : '.35';
-      cdNum.style.display = ready ? 'none' : 'flex';
-      cdNum.textContent = ready ? '' : Math.ceil(remain);
+      icon.style.opacity = (!learned) ? '0' : (ready ? '1' : '.35');
+      cdNum.style.display = (ready||!learned) ? 'none' : 'flex';
+      cdNum.textContent = (ready||!learned) ? '' : Math.ceil(remain);
+      skillCorner.textContent = 'Lv '+skillLvl+'/'+maxLvl;
+
+      if(isPlayerRow){
+        const canLevel = E.Combat.canLevelUpSkill(hero, idx).ok;
+        chip.classList.toggle('levelable', canLevel);
+        levelupCorner.textContent = canLevel ? (bindings['skillUp'+(idx+1)]||'').toUpperCase() : '';
+      }
     });
   }
 
@@ -91,7 +109,14 @@ window.Engine = window.Engine || {};
     el('e-hp').style.width=Math.max(0,(s.enemyHero.hp/s.enemyHero.maxHp*100))+'%';
 
     updateAbilityChips('p-ability-row',s.playerHero);
+    updateAbilityChips('e-ability-row',s.enemyHero);
     updatePriorityButtons();
+
+    const spTag=el('p-skillpoints');
+    if(spTag){
+      spTag.style.display = s.playerHero.skillPoints>0 ? 'inline-block' : 'none';
+      spTag.textContent = s.playerHero.skillPoints+' Poin Skill — Z/X/C/V untuk memakai';
+    }
 
     const atMax = s.playerHero.level>=CFG.heroMaxLevel;
     el('p-xp-fill').style.width = atMax ? '100%' : Math.max(0,(s.playerHero.xp/E.util.xpNeeded(s.playerHero.level)*100))+'%';

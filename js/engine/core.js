@@ -19,6 +19,7 @@ window.Engine = window.Engine || {};
       x:spawn.x, y:spawn.y, hp:def.maxHp, maxHp:def.maxHp, dmg:def.dmg,
       range:def.range, atkInterval:def.atkInterval, atkTimer:0, speed:def.speed,
       level:1, xp:0, abilities:def.abilities, abilityTimers:def.abilities.map(()=>0),
+      skillPoints:0, skillLevels:def.abilities.map(()=>0), skillLastLevelUp:def.abilities.map(()=>0),
       respawnTimer:0, buffTimer:0, buffDmgMult:1, buffSpeedMult:1, buffAtkMult:1,
       // arah hadap (radian): facing = arah panah saat ini, desiredAngle = arah tujuan
       // yang dikejar panah dengan kecepatan putar turnRate (derajat/detik)
@@ -78,6 +79,7 @@ window.Engine = window.Engine || {};
     s.game = {state:'playing', over:false, winner:null};
     document.getElementById('overlay-over').classList.remove('show');
     E.HUD.buildAbilityUI('p-ability-row', s.playerHero);
+    E.HUD.buildAbilityUI('e-ability-row', s.enemyHero);
     E.Camera.updateCamera();
     s.lastTs = performance.now();
     cancelAnimationFrame(s.rafId);

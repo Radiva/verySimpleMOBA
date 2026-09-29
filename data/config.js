@@ -149,5 +149,21 @@ window.GAME_CONFIG = {
   xpPerLevelBase: 80,      // kebutuhan XP di level 1
   xpPerLevelScale: 40,     // tambahan kebutuhan XP tiap naik level
   heroLevelHpGain: 40,     // tambahan HP maksimum tiap naik level
-  heroLevelDmgGain: 4      // tambahan damage serangan biasa tiap naik level
+  heroLevelDmgGain: 4,     // tambahan damage serangan biasa tiap naik level
+
+  // --- Poin skill (leveling kemampuan, TERPISAH dari level hero) ---
+  // Kemampuan tidak lagi otomatis menguat mengikuti level hero — tiap
+  // kemampuan punya LEVEL SKILL sendiri (0 = belum dipelajari) yang
+  // dinaikkan manual pakai poin skill. Nilai di sini adalah bawaan;
+  // tiap kemampuan boleh menimpanya lewat field di data/heroes.js
+  // (maxSkillLevel, unlockAtHeroLevel, levelGap).
+  skillPoints: {
+    perHeroLevel: 1,            // poin skill didapat tiap hero naik 1 level
+    defaultMaxLevel: 5,         // batas level skill kalau ability tidak set "maxSkillLevel"
+    defaultUnlockAtHeroLevel: 1,// "jeda dari level awal": level hero minimum sebelum
+                                 // poin PERTAMA boleh masuk ke skill ini
+    defaultLevelGap: 1          // "jeda setelah poin ditambahkan": hero harus naik
+                                 // minimal segini level lagi sebelum poin BERIKUTNYA
+                                 // boleh masuk ke skill yang SAMA
+  }
 };

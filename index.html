@@ -23,7 +23,7 @@
     <div class="select-actions">
       <button class="btn ghost" id="btn-open-keybinds">⚙ Atur Tombol</button>
     </div>
-    <div class="controls-note">Klik hero di daftar kiri untuk melihat detailnya, lalu tekan "Pilih Hero Ini". Musuh akan otomatis memakai hero yang tidak kamu pilih. Gerakkan hero dengan <b>W A S D</b> (bisa diatur ulang), gunakan kemampuan dengan tombol <b>1</b>/<b>2</b>/<b>3</b>/<b>4</b> sesuai urutan kemampuan hero. Serangan biasa terjadi otomatis saat musuh berada dalam jangkauan. Bunuh monster hutan untuk XP ekstra — Penjaga Kuno memberi buff sementara.</div>
+    <div class="controls-note">Klik hero di daftar kiri untuk melihat detailnya, lalu tekan "Pilih Hero Ini". Musuh akan otomatis memakai hero yang tidak kamu pilih. Gerakkan hero dengan <b>W A S D</b> (bisa diatur ulang), gunakan kemampuan dengan tombol <b>1</b>/<b>2</b>/<b>3</b>/<b>4</b>, dan naikkan level kemampuan pakai poin skill lewat <b>Z</b>/<b>X</b>/<b>C</b>/<b>V</b> (semua bisa diatur ulang) sesuai urutan kemampuan hero. Serangan biasa terjadi otomatis saat musuh berada dalam jangkauan. Bunuh monster hutan untuk XP ekstra — Penjaga Kuno memberi buff sementara.</div>
   </div>
 
   <!-- ===== MODAL PENGATURAN TOMBOL ===== -->
@@ -52,6 +52,7 @@
           <span class="xp-text" id="p-xp-text">0/80</span>
         </div>
         <div class="ability-row" id="p-ability-row"></div>
+        <span class="skillpoint-badge" id="p-skillpoints" style="display:none">Poin Skill</span>
         <div class="priority-row">
           <span class="priority-chip" id="btn-priority-type">Prioritas: Minion</span>
           <span class="priority-chip" id="btn-priority-status">Fokus: HP Terendah</span>
@@ -69,6 +70,7 @@
           <span class="xp-text" id="e-xp-text">0/80</span>
           <div class="xp-bar"><div class="xp-fill" id="e-xp-fill" style="width:0%;background:var(--hp-bad)"></div></div>
         </div>
+        <div class="ability-row" id="e-ability-row"></div>
         <span class="buff-tag" id="e-buff-tag" style="display:none">BUFF</span>
         <span class="respawn-tag" id="e-respawn-tag" style="display:none">Bangkit</span>
       </div>
