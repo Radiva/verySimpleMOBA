@@ -29,7 +29,19 @@ window.Engine = window.Engine || {};
   // belakang nexus) — nilai bawaan dipakai bila field-nya tidak ada di config.js
   const NEXUS_CFG = Object.assign({hp:CFG.baseHp||1500, dmg:45, range:130, atkInterval:1.1, radius:26}, CFG.nexus);
   const SAFE_CFG = Object.assign({widthPct:0.073, regenRate:25, protectHeroes:true}, CFG.safeZone);
-  const WAVE_X = Object.assign({player:0.17, enemy:0.83}, CFG.waveSpawnXPct);
+
+  // --- Bentuk jalur (lihat data/mapshape.js) — bisa berkelok, bukan cuma lurus ---
+  const SHAPE = window.MAP_SHAPE || { path:[{xPct:0.1,yPct:0.5},{xPct:0.9,yPct:0.5}], laneWidthPct:0.3 };
+  const PATH = (SHAPE.path && SHAPE.path.length>=2 ? SHAPE.path : [{xPct:0.1,yPct:0.5},{xPct:0.9,yPct:0.5}]).map(pctPoint);
+  const PATH_SEG_LEN = [];
+  let PATH_LENGTH = 0;
+  for(let i=0;i<PATH.length-1;i++){
+    const d = Math.hypot(PATH[i+1].x-PATH[i].x, PATH[i+1].y-PATH[i].y);
+    PATH_SEG_LEN.push(d);
+    PATH_LENGTH += d;
+  }
+  const LANE_WIDTH = (SHAPE.laneWidthPct||0.3) * CANVAS_H;
+  const WAVE_LANE_OFFSETS = (CFG.waveLaneOffsetFractions||[0]).map(f=>f*(LANE_WIDTH/2));
 
   const layout = {
     CFG, CANVAS_W, CANVAS_H,
@@ -40,11 +52,8 @@ window.Engine = window.Engine || {};
     ENEMY_NEXUS: pctPoint(CFG.enemyNexus || {xPct:0.875,yPct:0.5}),
     PLAYER_SPAWN: pctPoint(CFG.playerSpawn),
     ENEMY_SPAWN: pctPoint(CFG.enemySpawn),
-    LANE_TOP: CFG.laneBounds.topPct*CANVAS_H,
-    LANE_BOTTOM: CFG.laneBounds.bottomPct*CANVAS_H,
     SAFE_W: SAFE_CFG.widthPct*CANVAS_W,
-    WAVE_SPAWN_X: { player: WAVE_X.player*CANVAS_W, enemy: WAVE_X.enemy*CANVAS_W },
-    WAVE_YS: CFG.waveYOffsetsPct.map(p=>p*CANVAS_H),
+    PATH, PATH_SEG_LEN, PATH_LENGTH, LANE_WIDTH, WAVE_LANE_OFFSETS,
     PLAYER_TOWER_DEFS: CFG.towers.player.map(pctPoint),
     ENEMY_TOWER_DEFS: CFG.towers.enemy.map(pctPoint),
     RESOLVED_CAMPS: window.JUNGLE_CAMPS.map(c=>({...c, x:c.xPct*CANVAS_W, y:c.yPct*CANVAS_H}))
@@ -70,6 +79,52 @@ window.Engine = window.Engine || {};
     turnToward: (cur,target,maxStep) => {
       const diff = Math.atan2(Math.sin(target-cur), Math.cos(target-cur));
       return Math.abs(diff)<=maxStep ? target : cur + Math.sign(diff)*maxStep;
+    },
+    // Titik di sepanjang jalur (data/mapshape.js) pada jarak tempuh tertentu
+    // dari ujung awal (0) sampai ujung akhir (PATH_LENGTH), plus arah jalur
+    // di titik itu (radian) — dipakai minion berjalan mengikuti bentuk jalur.
+    pointAtPathDistance: (dist) => {
+      const P=layout.PATH, SL=layout.PATH_SEG_LEN;
+      dist = util.clamp(dist, 0, layout.PATH_LENGTH);
+      let acc=0;
+      for(let i=0;i<SL.length;i++){
+        if(dist<=acc+SL[i] || i===SL.length-1){
+          const t = SL[i]>0 ? Math.min(1,Math.max(0,(dist-acc)/SL[i])) : 0;
+          const a=P[i], b=P[i+1];
+          return { x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, angle:Math.atan2(b.y-a.y,b.x-a.x) };
+        }
+        acc += SL[i];
+      }
+      const last=P[P.length-1]; return { x:last.x, y:last.y, angle:0 };
+    },
+    // Titik terdekat di jalur dari (x,y), beserta jaraknya ke jalur itu dan
+    // posisi tempuhnya sepanjang jalur — dipakai untuk membatasi hero tetap
+    // di dalam koridor jalur (clampToLane) walau jalurnya berkelok.
+    closestOnPath: (x,y) => {
+      const P=layout.PATH, SL=layout.PATH_SEG_LEN;
+      let bestPt=P[0], bestD=Infinity, bestAlong=0, acc=0;
+      for(let i=0;i<P.length-1;i++){
+        const a=P[i], b=P[i+1];
+        const abx=b.x-a.x, aby=b.y-a.y;
+        const len2=abx*abx+aby*aby || 1;
+        const t=Math.max(0,Math.min(1, ((x-a.x)*abx+(y-a.y)*aby)/len2));
+        const px=a.x+abx*t, py=a.y+aby*t;
+        const d=Math.hypot(x-px,y-py);
+        if(d<bestD){ bestD=d; bestPt={x:px,y:py}; bestAlong=acc+t*SL[i]; }
+        acc += SL[i];
+      }
+      return { x:bestPt.x, y:bestPt.y, dist:bestD, distAlong:bestAlong };
+    },
+    // Kalau (x,y) sudah di dalam koridor jalur (setengah LANE_WIDTH dari
+    // jalur), kembalikan apa adanya; kalau keluar, tarik kembali tegak
+    // lurus ke tepi koridor terdekat. Dipakai hero (pemain & AI) supaya
+    // tidak bisa menembus luar jalur walau jalurnya berkelok.
+    clampToLane: (x,y) => {
+      const c = util.closestOnPath(x,y);
+      const half = layout.LANE_WIDTH/2;
+      if(c.dist<=half) return {x,y};
+      const dx=x-c.x, dy=y-c.y, d=c.dist||1;
+      return { x: c.x+dx/d*half, y: c.y+dy/d*half };
     }
   };
 

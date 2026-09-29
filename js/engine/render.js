@@ -14,19 +14,35 @@ window.Engine = window.Engine || {};
     const ctx=E.ctx, L=E.layout;
     ctx.fillStyle='#1a2015';
     ctx.fillRect(0,0,L.CANVAS_W,L.CANVAS_H);
-    const grd=ctx.createLinearGradient(0,0,0,L.CANVAS_H);
-    grd.addColorStop(0,'#242d1c');
-    grd.addColorStop(0.5,'#2c3722');
-    grd.addColorStop(1,'#242d1c');
-    ctx.fillStyle=grd;
-    ctx.fillRect(0,L.LANE_TOP,L.CANVAS_W,L.LANE_BOTTOM-L.LANE_TOP);
-    ctx.strokeStyle='rgba(201,155,74,0.14)';
-    ctx.lineWidth=1;
-    const camX=E.state.camera.x;
-    const gx0=Math.max(0,Math.floor(camX/40)*40), gx1=Math.min(L.CANVAS_W,camX+L.VIEWPORT_W+40);
-    for(let x=gx0;x<gx1;x+=40){
-      ctx.beginPath(); ctx.moveTo(x,L.LANE_TOP); ctx.lineTo(x,L.LANE_BOTTOM); ctx.stroke();
-    }
+
+    const P=L.PATH;
+    if(!P || P.length<2) return;
+
+    // Koridor jalur digambar sebagai garis TEBAL mengikuti titik-titik
+    // path (data/mapshape.js) — lineCap/lineJoin 'round' otomatis
+    // membuat tikungan membulat mulus walau jalurnya berkelok tajam,
+    // jadi tidak perlu menghitung poligon tepi jalur secara manual.
+    ctx.save();
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath();
+    ctx.moveTo(P[0].x,P[0].y);
+    for(let i=1;i<P.length;i++) ctx.lineTo(P[i].x,P[i].y);
+
+    ctx.strokeStyle='#2c3722';
+    ctx.lineWidth=L.LANE_WIDTH;
+    ctx.stroke();
+
+    ctx.strokeStyle='rgba(60,75,45,0.55)';
+    ctx.lineWidth=L.LANE_WIDTH*0.55;
+    ctx.stroke();
+
+    // garis putus-putus di tengah jalur sebagai penanda arah/lebar
+    ctx.strokeStyle='rgba(201,155,74,0.16)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([14,10]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   function drawHpBar(x,y,w,h,hp,maxHp){
@@ -163,7 +179,7 @@ window.Engine = window.Engine || {};
       ctx.textAlign='center';
       const spawn = h.team==='player' ? L.PLAYER_SPAWN : L.ENEMY_SPAWN;
       ctx.fillText((h.team==='player'?'Bangkit ':'Musuh bangkit ')+Math.ceil(h.respawnTimer)+'s',
-        spawn.x, (L.LANE_TOP+L.LANE_BOTTOM)/2-20);
+        spawn.x, spawn.y-30);
       return;
     }
     if(h.buffTimer>0){

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alat Desain Peta — Garis Depan</title>
+<style>
+  :root{
+    --bg-0:#12160f; --panel:#232b1d; --panel-2:#2c3524; --line:#3a4530;
+    --cream:#ece4d0; --cream-dim:#b9b09b; --brass:#c99b4a; --brass-bright:#e4b662;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg-0);color:var(--cream);font-family:'Segoe UI',Arial,sans-serif;}
+  #app{max-width:1040px;margin:0 auto;padding:18px 16px 40px;}
+  h1{font-size:1.4rem;color:var(--brass-bright);margin:4px 0 2px;}
+  p.sub{color:var(--cream-dim);font-size:.86rem;margin:0 0 16px;max-width:760px;line-height:1.5;}
+  .layout{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+  #canvas-wrap{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0c0f0a;flex:1;min-width:280px;}
+  canvas{display:block;width:100%;height:auto;cursor:crosshair;}
+  .panel{
+    flex:0 0 260px;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:14px;display:flex;flex-direction:column;gap:12px;font-size:.85rem;
+  }
+  .panel h2{font-size:.95rem;margin:0 0 2px;color:var(--brass-bright);}
+  .row{display:flex;flex-direction:column;gap:4px;}
+  .row label{color:var(--cream-dim);font-size:.78rem;}
+  input[type=range]{width:100%;}
+  .val{font-weight:700;color:var(--brass-bright);}
+  .btn{
+    appearance:none;border:none;cursor:pointer;border-radius:7px;padding:9px 12px;
+    font-weight:700;font-size:.85rem;background:var(--brass);color:#22190c;
+  }
+  .btn:hover{background:var(--brass-bright);}
+  .btn.ghost{background:transparent;border:1px solid var(--brass);color:var(--brass-bright);}
+  .btn.ghost:hover{background:rgba(201,155,74,.12);}
+  .btn.danger{background:#b2402f;color:#fff;}
+  .btn.danger:hover{background:#c94f3d;}
+  .legend{display:flex;flex-direction:column;gap:5px;font-size:.76rem;color:var(--cream-dim);}
+  .legend span.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
+  #status{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+    padding:8px 10px;font-size:.78rem;color:var(--cream-dim);min-height:2.6em;white-space:pre-line;
+  }
+  #point-list{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+  .pt-row{
+    display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:5px;padding:4px 6px;font-size:.74rem;
+  }
+  .pt-row.selected{border-color:var(--brass-bright);}
+  .pt-row span{flex:1;}
+  .pt-row button{
+    appearance:none;border:none;background:#b2402f;color:#fff;border-radius:4px;
+    width:18px;height:18px;line-height:1;cursor:pointer;font-size:.7rem;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Alat Desain Peta — Garis Depan</h1>
+  <p class="sub">
+    Klik di area kanvas kosong untuk <b>menambah titik baru di ujung jalur</b>.
+    Seret sebuah titik untuk memindahkannya. Klik kanan pada titik, atau pilih
+    lalu tekan <b>Delete</b>, untuk menghapusnya (minimal 2 titik). Titik
+    pertama = ujung sisi pemain (kiri), titik terakhir = ujung sisi musuh
+    (kanan) — urutan di antaranya menentukan kelokan jalur.
+    Referensi abu-abu (nexus, menara, zona aman, kemp hutan) dibaca langsung
+    dari <code>data/config.js</code> &amp; <code>data/jungle.js</code> supaya
+    kamu bisa menyelaraskan jalur dengannya; alat ini sendiri tidak mengubah
+    file-file itu.
+  </p>
+
+  <div class="layout">
+    <div id="canvas-wrap">
+      <canvas id="field" width="960" height="400"></canvas>
+    </div>
+
+    <div class="panel">
+      <div>
+        <h2>Lebar koridor jalur</h2>
+        <div class="row">
+          <label>laneWidthPct (persentase tinggi peta)</label>
+          <input type="range" id="lane-width" min="0.05" max="0.6" step="0.01">
+          <div><span class="val" id="lane-width-val">0.30</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h2>Titik jalur</h2>
+        <div id="point-list"></div>
+      </div>
+
+      <div class="row">
+        <button class="btn ghost" id="btn-straight">Jadikan Garis Lurus</button>
+        <button class="btn ghost" id="btn-reload">Muat Ulang dari mapshape.js</button>
+        <button class="btn danger" id="btn-clear-sel">Hapus Titik Terpilih</button>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="btn-download">⬇ Unduh data/mapshape.js</button>
+      </div>
+
+      <div id="status">Klik kanvas untuk menambah titik pertama.</div>
+
+      <div class="legend">
+        <div><span class="sw" style="background:#3f7fb0"></span>Nexus &amp; menara pemain</div>
+        <div><span class="sw" style="background:#b2402f"></span>Nexus &amp; menara musuh</div>
+        <div><span class="sw" style="background:#7ea25a"></span>Kemp hutan (data/jungle.js)</div>
+        <div><span class="sw" style="background:#e4b662"></span>Titik &amp; jalur yang sedang didesain</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Data yang sudah ada, hanya dibaca sebagai referensi & titik awal -->
+<script src="../data/config.js"></script>
+<script src="../data/jungle.js"></script>
+<script src="../data/mapshape.js"></script>
+<script>
+(function(){
+  "use strict";
+  const CFG = window.GAME_CONFIG;
+  const JUNGLE = window.JUNGLE_CAMPS || [];
+  const EXISTING_SHAPE = window.MAP_SHAPE || null;
+
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  const DISPLAY_W = 960;
+  const DISPLAY_H = Math.round(DISPLAY_W * (CFG.canvasH / CFG.canvasW));
+  canvas.width = DISPLAY_W;
+  canvas.height = DISPLAY_H;
+
+  // --- state jalur yang sedang didesain ---
+  let path = [];
+  let laneWidthPct = 0.30;
+  let selected = -1;
+  let dragging = -1;
+
+  function loadFromShape(shape){
+    if(shape && Array.isArray(shape.path) && shape.path.length>=2){
+      path = shape.path.map(p=>({xPct:p.xPct, yPct:p.yPct}));
+      laneWidthPct = shape.laneWidthPct || 0.30;
+    } else {
+      path = [
+        {xPct:(CFG.playerSpawn||{xPct:0.05}).xPct, yPct:0.5},
+        {xPct:(CFG.enemySpawn||{xPct:0.95}).xPct, yPct:0.5}
+      ];
+      laneWidthPct = 0.30;
+    }
+    selected=-1; dragging=-1;
+    document.getElementById('lane-width').value = laneWidthPct;
+    document.getElementById('lane-width-val').textContent = laneWidthPct.toFixed(2);
+    render();
+  }
+
+  // --- referensi statis (nexus, menara, safe zone, kemp) dalam koordinat kanvas tampilan ---
+  function px(pct){ return {x:pct.xPct*DISPLAY_W, y:pct.yPct*DISPLAY_H}; }
+
+  function drawRefOctagon(cx,cy,r,color){
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a = Math.PI/8 + i*Math.PI/4;
+      const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  }
+  function drawRefCircle(cx,cy,r,color){
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  }
+  function drawRefDiamond(cx,cy,r,color){
+    ctx.beginPath();
+    ctx.moveTo(cx,cy-r); ctx.lineTo(cx+r,cy); ctx.lineTo(cx,cy+r); ctx.lineTo(cx-r,cy);
+    ctx.closePath();
+    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  function drawReferences(){
+    // safe zone (pita tipis di kedua tepi)
+    const safeW = ((CFG.safeZone||{}).widthPct||0.073)*DISPLAY_W;
+    ctx.fillStyle='rgba(63,127,176,0.10)'; ctx.fillRect(0,0,safeW,DISPLAY_H);
+    ctx.fillStyle='rgba(178,64,47,0.10)'; ctx.fillRect(DISPLAY_W-safeW,0,safeW,DISPLAY_H);
+
+    // nexus
+    if(CFG.playerNexus){ const p=px(CFG.playerNexus); drawRefOctagon(p.x,p.y,16,'#3f7fb0'); }
+    if(CFG.enemyNexus){ const p=px(CFG.enemyNexus); drawRefOctagon(p.x,p.y,16,'#b2402f'); }
+
+    // menara
+    ((CFG.towers||{}).player||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#3f7fb0'); });
+    ((CFG.towers||{}).enemy||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#b2402f'); });
+
+    // spawn
+    if(CFG.playerSpawn){ const p=px(CFG.playerSpawn); drawRefCircle(p.x,p.y,9,'#3f7fb0'); }
+    if(CFG.enemySpawn){ const p=px(CFG.enemySpawn); drawRefCircle(p.x,p.y,9,'#b2402f'); }
+
+    // kemp hutan
+    JUNGLE.forEach(c=>{ const p=px(c); drawRefDiamond(p.x,p.y,9,'#7ea25a'); });
+  }
+
+  function drawPath(){
+    if(path.length<2) return;
+    const laneWidthPx = laneWidthPct*DISPLAY_H;
+    ctx.save();
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath();
+    ctx.moveTo(path[0].xPct*DISPLAY_W, path[0].yPct*DISPLAY_H);
+    for(let i=1;i<path.length;i++) ctx.lineTo(path[i].xPct*DISPLAY_W, path[i].yPct*DISPLAY_H);
+    ctx.strokeStyle='rgba(228,182,98,0.18)';
+    ctx.lineWidth=laneWidthPx;
+    ctx.stroke();
+    ctx.strokeStyle='rgba(228,182,98,0.7)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.restore();
+
+    path.forEach((p,i)=>{
+      const x=p.xPct*DISPLAY_W, y=p.yPct*DISPLAY_H;
+      ctx.beginPath();
+      ctx.arc(x,y, i===selected?8:6, 0, Math.PI*2);
+      ctx.fillStyle = i===selected ? '#fff' : (i===0 ? '#3f7fb0' : (i===path.length-1 ? '#b2402f' : '#e4b662'));
+      ctx.fill();
+      ctx.strokeStyle='#00000066'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.font="10px sans-serif"; ctx.fillStyle='#fff'; ctx.textAlign='center';
+      ctx.fillText(String(i+1), x, y-11);
+    });
+  }
+
+  function render(){
+    ctx.clearRect(0,0,DISPLAY_W,DISPLAY_H);
+    ctx.fillStyle='#1a2015'; ctx.fillRect(0,0,DISPLAY_W,DISPLAY_H);
+    drawReferences();
+    drawPath();
+    renderPointList();
+  }
+
+  function renderPointList(){
+    const list = document.getElementById('point-list');
+    list.innerHTML='';
+    path.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.className='pt-row'+(i===selected?' selected':'');
+      row.innerHTML = '<span>#'+(i+1)+'  x='+p.xPct.toFixed(3)+'  y='+p.yPct.toFixed(3)+'</span>'+
+        '<button data-i="'+i+'" title="Hapus">✕</button>';
+      row.querySelector('span').addEventListener('click',()=>{ selected=i; render(); });
+      row.querySelector('button').addEventListener('click',(e)=>{ e.stopPropagation(); removePoint(i); });
+      list.appendChild(row);
+    });
+  }
+
+  function setStatus(msg){ document.getElementById('status').textContent = msg; }
+
+  function removePoint(i){
+    if(path.length<=2){ setStatus('Jalur minimal butuh 2 titik — tidak bisa dihapus lagi.'); return; }
+    path.splice(i,1);
+    if(selected===i) selected=-1; else if(selected>i) selected--;
+    render();
+  }
+
+  function hitTest(x,y){
+    for(let i=path.length-1;i>=0;i--){
+      const dx=x-path[i].xPct*DISPLAY_W, dy=y-path[i].yPct*DISPLAY_H;
+      if(Math.hypot(dx,dy) <= 10) return i;
+    }
+    return -1;
+  }
+
+  function canvasPos(evt){
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width, scaleY = canvas.height / r.height;
+    return { x:(evt.clientX-r.left)*scaleX, y:(evt.clientY-r.top)*scaleY };
+  }
+
+  canvas.addEventListener('mousedown', e=>{
+    const {x,y} = canvasPos(e);
+    const hit = hitTest(x,y);
+    if(hit>=0){
+      selected = hit; dragging = hit;
+      setStatus('Menyeret titik #'+(hit+1)+' — lepas untuk menempatkan.');
+    } else {
+      const xPct = Math.min(1,Math.max(0,x/DISPLAY_W));
+      const yPct = Math.min(1,Math.max(0,y/DISPLAY_H));
+      path.push({xPct,yPct});
+      selected = path.length-1; dragging = -1;
+      setStatus('Titik #'+path.length+' ditambahkan di ujung jalur.');
+    }
+    render();
+  });
+  canvas.addEventListener('mousemove', e=>{
+    if(dragging<0) return;
+    const {x,y} = canvasPos(e);
+    path[dragging].xPct = Math.min(1,Math.max(0,x/DISPLAY_W));
+    path[dragging].yPct = Math.min(1,Math.max(0,y/DISPLAY_H));
+    render();
+  });
+  window.addEventListener('mouseup', ()=>{ dragging=-1; });
+  canvas.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    const {x,y} = canvasPos(e);
+    const hit = hitTest(x,y);
+    if(hit>=0) removePoint(hit);
+  });
+  window.addEventListener('keydown', e=>{
+    if((e.key==='Delete'||e.key==='Backspace') && selected>=0 && document.activeElement===document.body){
+      e.preventDefault();
+      removePoint(selected);
+    }
+  });
+
+  document.getElementById('lane-width').addEventListener('input', e=>{
+    laneWidthPct = parseFloat(e.target.value);
+    document.getElementById('lane-width-val').textContent = laneWidthPct.toFixed(2);
+    render();
+  });
+  document.getElementById('btn-straight').addEventListener('click', ()=>{
+    path = [
+      {xPct:(CFG.playerSpawn||{xPct:0.05}).xPct, yPct:0.5},
+      {xPct:(CFG.enemySpawn||{xPct:0.95}).xPct, yPct:0.5}
+    ];
+    selected=-1;
+    setStatus('Jalur direset jadi garis lurus dari spawn pemain ke spawn musuh.');
+    render();
+  });
+  document.getElementById('btn-reload').addEventListener('click', ()=>{
+    loadFromShape(EXISTING_SHAPE);
+    setStatus('Dimuat ulang dari data/mapshape.js saat ini.');
+  });
+  document.getElementById('btn-clear-sel').addEventListener('click', ()=>{
+    if(selected<0){ setStatus('Belum ada titik yang dipilih. Klik salah satu titik dulu.'); return; }
+    removePoint(selected);
+  });
+
+  document.getElementById('btn-download').addEventListener('click', ()=>{
+    const lines = path.map(p=>'    { xPct: '+p.xPct.toFixed(4)+', yPct: '+p.yPct.toFixed(4)+' }').join(',\n');
+    const content =
+`/*
+  BENTUK PETA (JALUR)
+  ===================
+  File ini KHUSUS untuk bentuk jalur peta — dipisah dari data/config.js
+  supaya gampang didesain ulang tanpa mengaduk-aduk statistik lain.
+
+  Dibuat/diedit terakhir lewat tools/map-designer.html. "path" adalah
+  daftar titik berurutan dari sisi pemain ke sisi musuh, sebagai
+  PERSENTASE ukuran peta (xPct/yPct — sama seperti data/config.js: 0 =
+  kiri/atas, 1 = kanan/bawah). Garis lurus yang menghubungkan titik-titik
+  ini secara berurutan itulah yang benar-benar digambar & dipakai untuk
+  pergerakan hero/minion — tambah titik di tengah untuk membuat jalur
+  berkelok/zig-zag.
+
+  "laneWidthPct" mengatur lebar koridor jalur (tempat hero bebas bergerak
+  menyamping & minion menyebar), sebagai persentase TINGGI peta.
+
+  Catatan: titik pertama & terakhir di bawah adalah angka xPct/yPct TETAP
+  (bukan lagi mengikuti playerSpawn/enemySpawn secara otomatis) karena
+  file ini digenerate ulang oleh alat desain. Kalau kamu memindah
+  playerSpawn/enemySpawn di data/config.js setelah ini, buka lagi
+  tools/map-designer.html untuk menyelaraskan ulang ujung jalurnya.
+
+  Ingin mendesain ulang secara visual? Buka tools/map-designer.html di
+  browser (klik dua kali, tidak perlu server) — klik kanvas kosong untuk
+  menambah titik, seret titik untuk memindahkannya, klik kanan atau
+  tekan Delete untuk menghapus, atur slider lebar koridor, lalu unduh
+  file ini lagi dan timpa yang lama.
+*/
+window.MAP_SHAPE = {
+  path: [
+${lines}
+  ],
+  laneWidthPct: ${laneWidthPct.toFixed(2)}
+};
+`;
+    const blob = new Blob([content], {type:'text/javascript'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mapshape.js';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setStatus('File mapshape.js terunduh. Pindahkan/timpa ke folder data/ pada proyekmu.');
+  });
+
+  loadFromShape(EXISTING_SHAPE);
+})();
+</script>
+</body>
+</html>

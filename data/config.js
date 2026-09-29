@@ -25,7 +25,9 @@
   satu-satu untuk tata letak yang benar-benar custom.
 
   Posisi kemp hutan (jungle) memakai sistem yang sama — lihat
-  data/jungle.js.
+  data/jungle.js. Bentuk JALUR (lurus atau berkelok) sekarang punya
+  file sendiri: data/mapshape.js — lihat file itu untuk mendesainnya,
+  termasuk lewat alat bantu kanvas di tools/map-designer.html.
 
   ------------------------------------------------------------------
   PETA vs LAYAR (viewport) — supaya peta besar tidak "menyusut"
@@ -86,21 +88,22 @@ window.GAME_CONFIG = {
   playerSpawn: { xPct: 0.036, yPct: 0.5 },
   enemySpawn:  { xPct: 0.964, yPct: 0.5 },
 
-  // --- Titik muncul minion tiap gelombang (persentase dari canvasW) ---
-  waveSpawnXPct: { player: 0.17, enemy: 0.83 },
+  // Minion selalu muncul tepat di ujung jalur milik timnya sendiri
+  // (lihat data/mapshape.js) dan berjalan MENGIKUTI BENTUK JALUR itu
+  // sampai ke ujung satunya — jadi kalau jalur dibuat berkelok, minion
+  // ikut berkelok, bukan jalan lurus menembus map.
 
-  // --- Batas jalur (area gerak vertikal hero & jalur minion) ---
-  laneBounds: { topPct: 0.15, bottomPct: 0.85 },
+  // Sebaran posisi menyamping antar-minion dalam satu gelombang, sebagai
+  // PECAHAN dari setengah lebar koridor jalur (laneWidthPct di
+  // data/mapshape.js): -1 = mepet ke satu sisi koridor, 0 = tengah
+  // jalur, 1 = mepet ke sisi lainnya. Dipakai berulang kalau satu
+  // gelombang berisi lebih banyak minion daripada jumlah elemen di sini.
+  waveLaneOffsetFractions: [-0.55, 0, 0.55, -0.25, 0.25],
 
-  // Posisi vertikal minion tiap gelombang, sebagai persentase tinggi
-  // peta. Jumlah elemen di sini membatasi variasi ketinggian minion
-  // (dipakai berulang jika satu gelombang berisi lebih banyak minion).
-  waveYOffsetsPct: [0.375, 0.5, 0.625, 0.4375, 0.5625],
-
-  // Jarak aman dari tepi peta / markas agar unit tidak menembus
-  // dinding markas (dalam piksel, tidak ikut skala persentase).
+  // Jarak aman dari tepi peta / markas agar hero tidak menembus dinding
+  // nexus (dalam piksel, tidak ikut skala persentase). Minion mengikuti
+  // bentuk jalur (data/mapshape.js) jadi tidak perlu batas ini.
   heroClampMargin: 25,
-  minionClampMargin: 80,
 
   // --- Ukuran PETA (boleh dibuat ekstrem — lihat catatan di atas) ---
   canvasW: 960,

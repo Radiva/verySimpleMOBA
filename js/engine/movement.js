@@ -11,15 +11,25 @@ window.Engine = window.Engine || {};
   "use strict";
   const E = window.Engine;
 
+  // Menahan (x,y) tetap di dalam koridor jalur (lihat clampToLane di
+  // state.js) sekaligus tidak menembus tepi peta / dinding nexus.
+  function clampToMap(x,y){
+    const CFG=E.layout.CFG;
+    const laned = E.util.clampToLane(x,y);
+    return {
+      x: E.util.clamp(laned.x, CFG.heroClampMargin, E.layout.CANVAS_W-CFG.heroClampMargin),
+      y: E.util.clamp(laned.y, CFG.heroClampMargin, E.layout.CANVAS_H-CFG.heroClampMargin)
+    };
+  }
+
   function moveToward(unit,dest,dt){
     const dx=dest.x-unit.x, dy=dest.y-unit.y;
     const d=Math.hypot(dx,dy);
     if(d<1) return;
     if(unit.desiredAngle!==undefined) unit.desiredAngle=Math.atan2(dy,dx);
     const sp=E.util.effSpeed(unit);
-    const CFG=E.layout.CFG;
-    unit.x=E.util.clamp(unit.x+(dx/d)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);
-    unit.y=E.util.clamp(unit.y+(dy/d)*sp*dt,E.layout.LANE_TOP,E.layout.LANE_BOTTOM);
+    const c=clampToMap(unit.x+(dx/d)*sp*dt, unit.y+(dy/d)*sp*dt);
+    unit.x=c.x; unit.y=c.y;
   }
 
   function updatePlayerMovement(dt){
@@ -34,9 +44,8 @@ window.Engine = window.Engine || {};
       const len=Math.hypot(dx,dy);
       hero.desiredAngle=Math.atan2(dy,dx);
       const sp=E.util.effSpeed(hero);
-      const CFG=E.layout.CFG;
-      hero.x=E.util.clamp(hero.x+(dx/len)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);
-      hero.y=E.util.clamp(hero.y+(dy/len)*sp*dt,E.layout.LANE_TOP,E.layout.LANE_BOTTOM);
+      const c=clampToMap(hero.x+(dx/len)*sp*dt, hero.y+(dy/len)*sp*dt);
+      hero.x=c.x; hero.y=c.y;
     }
   }
 
@@ -75,35 +84,51 @@ window.Engine = window.Engine || {};
     E.Combat.updateEnemyAbilities(hero,target);
   }
 
+  // Menempatkan minion di titik jalur sesuai pathDist-nya saat ini, digeser
+  // tegak lurus dari jalur sejauh laneOffset (sebaran antar-minion dalam
+  // satu gelombang) — jadi kalau jalur berkelok, minion ikut berkelok.
+  function placeOnPath(m){
+    const p = E.util.pointAtPathDistance(m.pathDist);
+    const perpX = -Math.sin(p.angle), perpY = Math.cos(p.angle);
+    m.x = p.x + perpX*m.laneOffset;
+    m.y = p.y + perpY*m.laneOffset;
+  }
+
   function updateMinionsMovement(dt){
-    const s=E.state, CFG=E.layout.CFG;
-    for(const m of s.playerMinions){
+    const L=E.layout;
+    for(const m of E.state.playerMinions){
       if(m.hp<=0) continue;
       if(E.Combat.findTargetFor(m)) continue;
-      m.x=E.util.clamp(m.x+m.speed*dt,CFG.minionClampMargin,E.layout.CANVAS_W-CFG.minionClampMargin);
+      m.pathDist = Math.min(L.PATH_LENGTH, m.pathDist + m.speed*dt);
+      placeOnPath(m);
     }
-    for(const m of s.enemyMinions){
+    for(const m of E.state.enemyMinions){
       if(m.hp<=0) continue;
       if(E.Combat.findTargetFor(m)) continue;
-      m.x=E.util.clamp(m.x-m.speed*dt,CFG.minionClampMargin,E.layout.CANVAS_W-CFG.minionClampMargin);
+      m.pathDist = Math.max(0, m.pathDist - m.speed*dt);
+      placeOnPath(m);
     }
   }
 
   function spawnWave(team,waveNumber){
-    const s=E.state;
-    const baseX = E.layout.WAVE_SPAWN_X[team];
+    const s=E.state, L=E.layout;
+    // minion selalu muncul tepat di ujung jalur milik timnya sendiri
+    const startDist = team==='player' ? 0 : L.PATH_LENGTH;
     const list = team==='player' ? s.playerMinions : s.enemyMinions;
     const comp = window.WAVE_COMPOSITION;
     const growth = window.MINION_GROWTH || {hpPerWave:0,dmgPerWave:0,speedPerWave:0};
     const mult = Math.max(0, waveNumber-1);
+    const offsets = L.WAVE_LANE_OFFSETS.length ? L.WAVE_LANE_OFFSETS : [0];
     comp.forEach((typeId,i)=>{
       const def=window.MINION_DEFS[typeId];
       if(!def) return;
       const hp = def.hp + (growth.hpPerWave||0)*mult;
-      list.push({type:'minion',team,x:baseX,y:E.layout.WAVE_YS[i%E.layout.WAVE_YS.length],hp,maxHp:hp,
-        dmg:def.dmg+(growth.dmgPerWave||0)*mult,range:def.range,atkInterval:def.atkInterval,
+      const m = {type:'minion',team,pathDist:startDist,laneOffset:offsets[i%offsets.length],x:0,y:0,
+        hp,maxHp:hp,dmg:def.dmg+(growth.dmgPerWave||0)*mult,range:def.range,atkInterval:def.atkInterval,
         atkTimer:0, speed:def.speed+(growth.speedPerWave||0)*mult, xpReward:def.xpReward,
-        color:def.color});
+        color:def.color};
+      placeOnPath(m);
+      list.push(m);
     });
   }
 

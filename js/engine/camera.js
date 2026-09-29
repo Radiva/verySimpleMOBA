@@ -63,6 +63,17 @@ window.Engine = window.Engine || {};
     ctx.lineWidth=1;
     ctx.strokeRect(mx+0.5,my+0.5,mmW-1,mmH-1);
 
+    // bentuk jalur (mengikuti data/mapshape.js, bisa berkelok)
+    if(L.PATH && L.PATH.length>1){
+      ctx.strokeStyle='rgba(201,155,74,0.5)';
+      ctx.lineWidth=Math.max(1.5, L.LANE_WIDTH*scale);
+      ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath();
+      ctx.moveTo(mx+L.PATH[0].x*scale, my+L.PATH[0].y*scale);
+      for(let i=1;i<L.PATH.length;i++) ctx.lineTo(mx+L.PATH[i].x*scale, my+L.PATH[i].y*scale);
+      ctx.stroke();
+    }
+
     // safe zone di kedua ujung
     const szW=Math.max(2,L.SAFE_W*scale);
     ctx.fillStyle='rgba(63,127,176,0.55)';

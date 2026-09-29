@@ -16,7 +16,10 @@ garis-depan/
 │   ├── config.js         statistik umum + LAYOUT PETA (menara, nexus, safe zone, level, dll)
 │   ├── heroes.js         daftar hero + kemampuan (bisa lebih dari satu)
 │   ├── minions.js        jenis minion jalur, susunan gelombang, pertumbuhan stat
-│   └── jungle.js         jenis monster hutan + posisi kemp
+│   ├── jungle.js         jenis monster hutan + posisi kemp
+│   └── mapshape.js       BENTUK jalur (lurus/berkelok) — file terpisah, lihat "Bentuk peta"
+├── tools/
+│   └── map-designer.html alat visual berbasis kanvas untuk mendesain bentuk jalur
 └── js/
     ├── engine/               mesin, dipecah per modul agar mudah dikembangkan
     │   ├── state.js           namespace Engine + resolusi layout peta
@@ -220,8 +223,47 @@ secara ekstrem:
 - Tambah lebih dari satu menara per sisi lewat array `towers.player` /
   `towers.enemy` — cocok untuk jalur panjang dengan beberapa lapis
   pertahanan.
-- Ubah `laneBounds` untuk mempersempit/melebarkan area gerak vertikal
-  hero dan jalur minion.
+- Bentuk jalurnya sendiri (lurus atau berkelok) dan lebar koridornya
+  ada di file terpisah, `data/mapshape.js` — lihat bagian "Bentuk peta
+  (jalur)" di bawah.
+
+## Bentuk peta (jalur) — tidak harus lurus
+
+Jalur peta **tidak harus berupa garis lurus**. Bentuknya (dan lebar
+koridornya) ada di file khusus **`data/mapshape.js`**, terpisah dari
+`config.js`, supaya gampang didesain ulang tanpa mengaduk-aduk
+statistik lain.
+
+- `path` — daftar titik berurutan dari sisi pemain ke sisi musuh
+  (format `xPct`/`yPct`, sama seperti di `config.js`). Garis yang
+  menghubungkan titik-titik ini secara berurutan itulah jalur yang
+  sesungguhnya digambar dan dipakai untuk pergerakan — tambah titik di
+  tengah untuk membuatnya berkelok/zig-zag. Contoh bawaan sudah berupa
+  kelokan ringan berbentuk "S", bukan garis lurus.
+- `laneWidthPct` — lebar koridor jalur (persentase TINGGI peta),
+  tempat hero bebas bergerak menyamping dan minion menyebar dalam satu
+  gelombang. **Hero (pemain maupun AI) dan minion tidak bisa keluar
+  dari koridor ini** walau jalurnya berkelok tajam — kalau terasa
+  sempit di tikungan, lebarkan nilainya.
+- Minion selalu muncul tepat di kedua ujung jalur dan berjalan
+  **mengikuti bentuk jalur** sampai ke ujung satunya (bukan jalan lurus
+  menembus peta) — kalau jalur berkelok, minion ikut berkelok.
+- Nexus, menara, safe zone, dan kemp hutan tetap punya posisi sendiri
+  di `config.js`/`jungle.js` (tidak otomatis mengikuti jalur) — kalau
+  kamu membuat jalur berkelok tajam, sesuaikan lagi posisinya supaya
+  tetap masuk akal secara visual.
+
+**Mendesain jalur secara visual (bukan menghitung xPct/yPct manual):**
+buka **`tools/map-designer.html`** di browser (klik dua kali, tidak
+perlu server). Kanvas di sana menampilkan posisi nexus/menara/safe
+zone/kemp hutanmu saat ini sebagai referensi abu-abu (dibaca langsung
+dari `data/config.js` & `data/jungle.js`) beserta jalur yang sedang
+aktif. Klik kanvas kosong untuk menambah titik baru di ujung jalur,
+seret titik yang sudah ada untuk memindahkannya, klik kanan atau tekan
+Delete pada titik terpilih untuk menghapusnya, dan ada slider untuk
+lebar koridor. Tombol **"⬇ Unduh data/mapshape.js"** meng-generate
+ulang file itu persis dengan format yang dipakai gim — tinggal timpa
+file lama di folder `data/`.
 
 ## Menambah hero baru & banyak kemampuan sekaligus
 
