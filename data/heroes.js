@@ -16,6 +16,8 @@
     range         jangkauan serangan biasa (piksel)
     atkInterval   jeda antar serangan biasa (detik, makin kecil makin cepat)
     speed         kecepatan gerak (piksel/detik)
+    turnRate      (opsional) kecepatan putar panah arah, derajat/detik;
+                  kalau dihilangkan memakai heroTurnRate di data/config.js
     abilities     ARRAY kemampuan (lihat di bawah) — boleh berisi 1 sampai
                   4 kemampuan. Urutan array menentukan tombolnya di layar:
                   abilities[0] -> tombol 1, abilities[1] -> tombol 2,

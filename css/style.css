@@ -217,6 +217,12 @@ h1,h2,h3,.hero-name,.brand{
 }
 .ability-name{font-size:.68rem;color:var(--cream-dim);}
 .priority-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:1px;}
+/* indikator saja — prioritas hanya diganti lewat shortcut keyboard */
+.priority-chip{
+  pointer-events:none;user-select:none;cursor:default;
+  border:1px solid var(--line);border-radius:6px;background:var(--panel-2);
+  color:var(--cream);font-size:.72rem;padding:3px 8px;
+}
 .hero-panel.enemy .priority-row{justify-content:flex-end;}
 .buff-tag{
   align-self:flex-start;

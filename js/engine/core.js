@@ -13,13 +13,18 @@ window.Engine = window.Engine || {};
 
   function createHero(team,id,spawn){
     const def = window.HERO_DEFS[id];
+    const CFG = E.layout.CFG;
     return {
       type:'hero', team, id, name:def.name, title:def.title, color:def.color, icon:def.icon,
       x:spawn.x, y:spawn.y, hp:def.maxHp, maxHp:def.maxHp, dmg:def.dmg,
       range:def.range, atkInterval:def.atkInterval, atkTimer:0, speed:def.speed,
       level:1, xp:0, abilities:def.abilities, abilityTimers:def.abilities.map(()=>0),
       respawnTimer:0, buffTimer:0, buffDmgMult:1, buffSpeedMult:1, buffAtkMult:1,
-      dir:{x: team==='player'?1:-1, y:0}
+      // arah hadap (radian): facing = arah panah saat ini, desiredAngle = arah tujuan
+      // yang dikejar panah dengan kecepatan putar turnRate (derajat/detik)
+      facing: team==='player' ? 0 : Math.PI,
+      desiredAngle: team==='player' ? 0 : Math.PI,
+      turnRate: (def.turnRate!==undefined ? def.turnRate : (CFG.heroTurnRate||270))
     };
   }
 
@@ -82,7 +87,9 @@ window.Engine = window.Engine || {};
     }
     M.updatePlayerMovement(dt);
     M.updateEnemyAI(dt);
+    M.updateFacing(dt);
     M.updateMinionsMovement(dt);
+    s.playerTarget = s.playerHero.hp>0 ? C.pickTargetByPriority(s.playerHero, s.playerHero.range) : null;
     C.performAutoAttacks(dt);
     M.updateAbilityTimers(dt);
     M.updateRespawns(dt);

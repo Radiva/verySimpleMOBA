@@ -98,6 +98,16 @@ window.GAME_CONFIG = {
     margin: 10              // jarak dari tepi layar
   },
 
+  // --- Putaran panah arah hero ---
+  // Kecepatan panah berputar menuju arah tombol gerak, dalam DERAJAT per detik
+  // (mis. 180 = setengah putaran/detik; 720 = sangat cepat). Berlaku untuk semua
+  // hero; hero tertentu bisa menimpanya dengan field "turnRate" di data/heroes.js.
+  // Saat hero menyerang, panah tetap langsung menghadap target.
+  heroTurnRate: 270,
+
+  // --- Border penanda target hero pemain (sebelum & saat diserang) ---
+  targetHighlight: { color: '#e5483a', lineWidth: 1.5 },
+
   // --- Prioritas serangan hero pemain (bisa diganti saat bermain lewat 2 tombol/shortcut) ---
   //   type   : 'minion' | 'hero' | 'building'   (urutan ganti: minion -> hero -> building -> minion)
   //   status : 'lowest' | 'highest'              (HP terendah / tertinggi)

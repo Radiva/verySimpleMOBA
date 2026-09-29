@@ -74,10 +74,8 @@ window.Engine = window.Engine || {};
     updatePriorityButtons();
   }
 
-  const btnType = el('btn-priority-type');
-  if(btnType) btnType.addEventListener('click', cyclePriorityType);
-  const btnStatus = el('btn-priority-status');
-  if(btnStatus) btnStatus.addEventListener('click', cyclePriorityStatus);
+  // Sengaja tanpa handler klik: prioritas hanya diganti lewat shortcut keyboard
+  // (lihat input.js), dan elemen di HUD hanya menjadi indikator.
 
   function updateHUD(){
     const s=E.state, CFG=E.layout.CFG;

@@ -53,10 +53,12 @@ hilang dan kotak menyala terang, kemampuan siap dipakai lagi.
 
 ## Prioritas serangan
 
-Dua tombol di panel hero pemain (bisa diklik, atau lewat shortcut
-**Q** dan **E** — bisa diganti di "⚙ Atur Tombol") mengatur target mana
-yang diserang duluan saat ada beberapa musuh dalam jangkauan sekaligus.
-Huruf shortcut-nya tampil di dalam tombol, mis. `Prioritas: Minion [Q]`:
+Dua indikator di panel hero pemain menampilkan pengaturan prioritas saat
+ini, mis. `Prioritas: Minion [Q]`. Indikator ini **tidak bisa diklik** —
+gim dirancang full keyboard saat pertandingan, jadi prioritas hanya
+diganti lewat shortcut **Q** dan **E** (bisa diganti di "⚙ Atur Tombol").
+Prioritas menentukan target mana yang diserang duluan saat ada beberapa
+musuh dalam jangkauan sekaligus:
 
 - **"Prioritas: ..."** — jenis target yang diutamakan, berputar tiap
   diklik: **Minion → Hero → Bangunan → Minion → ...** (jenis yang
@@ -96,10 +98,22 @@ Untuk mencoba kamera, ubah `canvasW` jadi mis. `2400` di `data/config.js`.
 
 ## Tampilan hero di kanvas
 
-Selain lingkaran berwarna tim, hero sekarang juga menampilkan **ikon
-hero** (sama seperti di layar pemilihan) di tengah lingkaran, plus
-**panah kecil** di tepi lingkaran yang menunjukkan arah hadap hero
-mengikuti arah gerak terakhirnya.
+Selain lingkaran berwarna tim, hero menampilkan **ikon hero** (sama
+seperti di layar pemilihan) di tengah lingkaran, plus **panah kecil**
+di tepi lingkaran yang menunjukkan arah hadap hero.
+
+- **Panah berputar halus.** Saat kamu menekan tombol gerak, panah tidak
+  langsung menghadap arah itu — ia berputar lewat jalur terpendek dengan
+  kecepatan `heroTurnRate` (derajat/detik, di `data/config.js`; bawaan
+  270). Hero tertentu bisa punya kecepatan sendiri lewat field opsional
+  `turnRate` di `data/heroes.js`. Hero musuh (AI) memakai aturan yang sama.
+- **Saat menyerang, panah langsung menghadap target** (serangan biasa
+  maupun kemampuan `snipe`), lalu kembali berputar halus ke arah tombol
+  gerak yang sedang ditekan.
+- **Border merah tipis** muncul pada target yang sedang dibidik hero
+  pemain, sejak target masuk jangkauan (sebelum diserang) sampai saat
+  diserang. Target mengikuti pengaturan prioritas. Warna & ketebalan
+  border diatur lewat `targetHighlight` di `data/config.js`.
 
 ## Layar pemilihan hero
 

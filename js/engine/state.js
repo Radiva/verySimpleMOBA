@@ -55,7 +55,12 @@ window.Engine = window.Engine || {};
     xpNeeded: (lvl) => CFG.xpPerLevelBase + lvl * CFG.xpPerLevelScale,
     effDmg: (u) => u.buffTimer>0 ? u.dmg*u.buffDmgMult : u.dmg,
     effSpeed: (u) => u.buffTimer>0 ? u.speed*u.buffSpeedMult : u.speed,
-    effAtkInterval: (u) => u.buffTimer>0 ? u.atkInterval/u.buffAtkMult : u.atkInterval
+    effAtkInterval: (u) => u.buffTimer>0 ? u.atkInterval/u.buffAtkMult : u.atkInterval,
+    // putar sudut "cur" menuju "target" lewat jalur terpendek, maksimal maxStep radian
+    turnToward: (cur,target,maxStep) => {
+      const diff = Math.atan2(Math.sin(target-cur), Math.cos(target-cur));
+      return Math.abs(diff)<=maxStep ? target : cur + Math.sign(diff)*maxStep;
+    }
   };
 
   // Data pertandingan yang sedang berjalan.
@@ -67,6 +72,7 @@ window.Engine = window.Engine || {};
     keys:{}, flashes:[], effects:[], lastTs:0,
     game:{state:'menu'}, rafId:null,
     camera:{x:0,y:0},
+    playerTarget:null,   // target yang sedang dibidik hero pemain (untuk border merah)
     // preferensi target serangan pemain — diatur lewat 2 tombol di HUD
     // (lihat js/engine/hud.js): "type" menentukan urutan prioritas jenis
     // target (dimulai dari nilai ini, lalu berputar minion->hero->

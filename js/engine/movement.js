@@ -15,7 +15,7 @@ window.Engine = window.Engine || {};
     const dx=dest.x-unit.x, dy=dest.y-unit.y;
     const d=Math.hypot(dx,dy);
     if(d<1) return;
-    if(unit.dir) unit.dir={x:dx/d,y:dy/d};
+    if(unit.desiredAngle!==undefined) unit.desiredAngle=Math.atan2(dy,dx);
     const sp=E.util.effSpeed(unit);
     const CFG=E.layout.CFG;
     unit.x=E.util.clamp(unit.x+(dx/d)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);
@@ -32,11 +32,22 @@ window.Engine = window.Engine || {};
     if(I.isDown('right')) dx+=1;
     if(dx||dy){
       const len=Math.hypot(dx,dy);
-      hero.dir={x:dx/len,y:dy/len};
+      hero.desiredAngle=Math.atan2(dy,dx);
       const sp=E.util.effSpeed(hero);
       const CFG=E.layout.CFG;
       hero.x=E.util.clamp(hero.x+(dx/len)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);
       hero.y=E.util.clamp(hero.y+(dy/len)*sp*dt,E.layout.LANE_TOP,E.layout.LANE_BOTTOM);
+    }
+  }
+
+  // Panah arah berputar halus menuju desiredAngle dengan kecepatan turnRate
+  // (derajat/detik) — tidak langsung menghadap arah tombol yang ditekan.
+  function updateFacing(dt){
+    const s=E.state;
+    for(const hero of [s.playerHero,s.enemyHero]){
+      if(hero.hp<=0) continue;
+      const step = hero.turnRate*Math.PI/180*dt;
+      hero.facing = E.util.turnToward(hero.facing, hero.desiredAngle, step);
     }
   }
 
@@ -111,6 +122,7 @@ window.Engine = window.Engine || {};
           hero.hp=hero.maxHp;
           const spawn = hero.team==='player' ? E.layout.PLAYER_SPAWN : E.layout.ENEMY_SPAWN;
           hero.x=spawn.x; hero.y=spawn.y;
+          hero.facing = hero.desiredAngle = (hero.team==='player' ? 0 : Math.PI);
         }
       }
     }
@@ -137,7 +149,7 @@ window.Engine = window.Engine || {};
   }
 
   window.Engine.Movement = {
-    moveToward, updatePlayerMovement, updateEnemyAI, updateMinionsMovement,
+    moveToward, updatePlayerMovement, updateFacing, updateEnemyAI, updateMinionsMovement,
     spawnWave, updateJungleRespawns, updateRespawns, updateRegen,
     updateBuffs, updateAbilityTimers
   };

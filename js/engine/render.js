@@ -156,9 +156,9 @@ window.Engine = window.Engine || {};
       ctx.textBaseline='alphabetic';
     }
 
-    // panah kecil menandai arah hadap hero (mengikuti arah gerak terakhir)
-    if(h.dir){
-      const ang=Math.atan2(h.dir.y,h.dir.x);
+    // panah kecil menandai arah hadap hero (berputar halus, lihat updateFacing)
+    if(h.facing!==undefined){
+      const ang=h.facing;
       const rInner=17, rOuter=24, spread=2.5;
       const tipX=h.x+Math.cos(ang)*rOuter, tipY=h.y+Math.sin(ang)*rOuter;
       const baseCx=h.x+Math.cos(ang)*rInner, baseCy=h.y+Math.sin(ang)*rInner;
@@ -218,6 +218,28 @@ window.Engine = window.Engine || {};
     }
   }
 
+  // Border merah tipis pada target yang sedang dibidik hero pemain — tampil
+  // sejak target masuk jangkauan (sebelum diserang) sampai saat diserang.
+  function drawTargetHighlight(){
+    const t=E.state.playerTarget;
+    if(!t || t.hp<=0) return;
+    const ctx=E.ctx, L=E.layout;
+    const HL=Object.assign({color:'#e5483a', lineWidth:1.5}, L.CFG.targetHighlight);
+    ctx.save();
+    ctx.strokeStyle=HL.color;
+    ctx.lineWidth=HL.lineWidth;
+    if(t.type==='base'){
+      const w=L.BASE_W, x = t.team==='player' ? 0 : L.CANVAS_W-w;
+      ctx.strokeRect(x+5,5,w-10,L.CANVAS_H-10);
+    } else {
+      const r = t.type==='hero' ? 21 : t.type==='tower' ? t.radius+5 : t.type==='monster' ? 16 : 12;
+      ctx.beginPath();
+      ctx.arc(t.x,t.y,r,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function render(){
     const s=E.state, L=E.layout, ctx=E.ctx;
 
@@ -238,6 +260,7 @@ window.Engine = window.Engine || {};
     drawJungleRespawnMarkers();
     drawHero(s.playerHero);
     drawHero(s.enemyHero);
+    drawTargetHighlight();
     drawFlashes();
     drawEffects();
     ctx.restore();

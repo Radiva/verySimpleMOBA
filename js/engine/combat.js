@@ -166,9 +166,8 @@ window.Engine = window.Engine || {};
       const t = (u===s.playerHero) ? pickTargetByPriority(u,u.range) : findTargetFor(u);
       if(t){
         // hero menghadap target yang sedang diserang (panah arah ikut berputar)
-        if(u.dir){
-          const dx=t.x-u.x, dy=t.y-u.y, d=Math.hypot(dx,dy);
-          if(d>0) u.dir={x:dx/d,y:dy/d};
+        if(u.facing!==undefined){
+          u.facing = u.desiredAngle = Math.atan2(t.y-u.y, t.x-u.x);
         }
         dealDamage(u,t,E.util.effDmg(u)); u.atkTimer=E.util.effAtkInterval(u);
       }
@@ -192,6 +191,7 @@ window.Engine = window.Engine || {};
       const target = hero===E.state.playerHero ? pickTargetByPriority(hero,a.radius) : nearestEnemyWithin(hero,a.radius);
       if(target){
         const dmg=(a.baseDamage+hero.level*a.perLevel)*dmgMult;
+        if(hero.facing!==undefined) hero.facing = hero.desiredAngle = Math.atan2(target.y-hero.y, target.x-hero.x);
         dealDamage(hero,target,dmg);
         addFlash(hero,target,true);
       }
