@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Garis Depan — MOBA Mini 1 Jalur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div class="brand">GARIS <span>DEPAN</span></div>
+  <div class="tagline">MOBA mini 2D · satu jalur · hutan berisi monster · gerak bebas dengan WASD</div>
+
+  <!-- ===== LAYAR PILIH HERO ===== -->
+  <div id="screen-select">
+    <div class="hero-grid" id="hero-grid"></div>
+    <div class="controls-note">Pilih salah satu hero untuk memulai. Musuh akan otomatis memakai hero yang tidak kamu pilih. Gerakkan hero dengan <b>W A S D</b>, gunakan kemampuan dengan tombol <b>1</b>/<b>2</b>/<b>3</b>/<b>4</b> sesuai urutan kemampuan hero. Serangan biasa terjadi otomatis saat musuh berada dalam jangkauan. Bunuh monster hutan untuk XP ekstra — Penjaga Kuno memberi buff sementara.</div>
+  </div>
+
+  <!-- ===== LAYAR PERMAINAN ===== -->
+  <div id="screen-game">
+    <div class="hud-top">
+      <div class="hero-panel player">
+        <div class="panel-row">
+          <span class="panel-name" id="p-name">-</span>
+          <span class="lvl-tag" id="p-lvl">Lv.1</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill" id="p-hp" style="width:100%"></div></div>
+        <div class="xp-row">
+          <div class="xp-bar"><div class="xp-fill" id="p-xp-fill" style="width:0%"></div></div>
+          <span class="xp-text" id="p-xp-text">0/80</span>
+        </div>
+        <div class="ability-row" id="p-ability-row"></div>
+        <span class="buff-tag" id="p-buff-tag" style="display:none">BUFF</span>
+      </div>
+      <div class="hero-panel enemy">
+        <div class="panel-row">
+          <span class="panel-name" id="e-name">-</span>
+          <span class="lvl-tag" id="e-lvl">Lv.1</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill" id="e-hp" style="width:100%;background:var(--hp-bad)"></div></div>
+        <div class="xp-row">
+          <span class="xp-text" id="e-xp-text">0/80</span>
+          <div class="xp-bar"><div class="xp-fill" id="e-xp-fill" style="width:0%;background:var(--hp-bad)"></div></div>
+        </div>
+        <span class="buff-tag" id="e-buff-tag" style="display:none">BUFF</span>
+      </div>
+    </div>
+
+    <div id="field-wrap">
+      <canvas id="field"></canvas>
+      <div class="overlay" id="overlay-over">
+        <h2 id="over-title">MENANG!</h2>
+        <div class="sub" id="over-sub">Markas musuh berhasil dihancurkan.</div>
+        <div class="stat-line">
+          <span>Skor bunuh: <b id="stat-kills">0 - 0</b></span>
+          <span>Level: <b id="stat-level">1</b></span>
+          <span>Waktu: <b id="stat-time">00:00</b></span>
+        </div>
+        <button class="btn" id="btn-restart">Main Lagi</button>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="base-hp">
+        <span>Markas kami</span>
+        <div class="hp-bar" style="flex:1"><div class="hp-fill" id="pb-hp" style="width:100%"></div></div>
+      </div>
+      <div class="hud-mid">
+        <span id="wave-timer">Gelombang: 9d</span>
+        <span id="match-timer">00:00</span>
+      </div>
+      <div class="base-hp">
+        <div class="hp-bar" style="flex:1"><div class="hp-fill" id="eb-hp" style="width:100%;background:var(--hp-bad)"></div></div>
+        <span>Markas musuh</span>
+      </div>
+    </div>
+    <div class="controls-hint">W A S D gerak &nbsp;•&nbsp; 1 2 3 4 pakai kemampuan &nbsp;•&nbsp; serangan biasa otomatis dalam jangkauan &nbsp;•&nbsp; belah ketupat di luar jalur = monster hutan</div>
+  </div>
+</div>
+
+<!-- Data game — edit file-file ini untuk mengubah statistik, map, hero/minion/monster -->
+<script src="data/config.js"></script>
+<script src="data/heroes.js"></script>
+<script src="data/minions.js"></script>
+<script src="data/jungle.js"></script>
+
+<!-- Mesin & orkestrasi -->
+<script src="js/engine.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
