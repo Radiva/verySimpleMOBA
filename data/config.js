@@ -2,18 +2,20 @@
   KONFIGURASI UMUM GIM
   =====================
   Ubah angka-angka di bawah ini untuk mengatur balance & LAYOUT PETA
-  tanpa menyentuh kode mesin (engine.js). Semua satuan waktu dalam detik.
+  tanpa menyentuh kode mesin (folder js/engine/). Semua satuan waktu
+  dalam detik.
 
   ------------------------------------------------------------------
   TENTANG LAYOUT PETA (canvasW/canvasH & semua field "xPct"/"yPct")
   ------------------------------------------------------------------
-  Supaya kamu bisa mengubah peta secara EKSTREM (kanvas sangat lebar,
+  Supaya kamu bisa mengubah peta secara EKSTREM (peta sangat lebar,
   sangat tinggi, jalur dipindah, menara ditambah, dsb) tanpa harus
   menghitung ulang koordinat piksel satu-satu, posisi setiap elemen
   peta (markas, menara, titik spawn, batas jalur) ditulis sebagai
-  PERSENTASE dari ukuran kanvas, bukan piksel absolut:
-    xPct: 0   = paling kiri kanvas      xPct: 1   = paling kanan
-    yPct: 0   = paling atas kanvas      yPct: 1   = paling bawah
+  PERSENTASE dari ukuran PETA ("canvasW"/"canvasH"), bukan piksel
+  absolut:
+    xPct: 0   = paling kiri peta      xPct: 1   = paling kanan
+    yPct: 0   = paling atas peta      yPct: 1   = paling bawah
     yPct: 0.5 = tepat di tengah secara vertikal
 
   Artinya: ubah "canvasW"/"canvasH" jadi ukuran ekstrem apa pun (mis.
@@ -24,6 +26,16 @@
 
   Posisi kemp hutan (jungle) memakai sistem yang sama — lihat
   data/jungle.js.
+
+  ------------------------------------------------------------------
+  PETA vs LAYAR (viewport) — supaya peta besar tidak "menyusut"
+  ------------------------------------------------------------------
+  "canvasW"/"canvasH" adalah ukuran PETA sesungguhnya (dipakai untuk
+  semua perhitungan posisi & pergerakan). "viewport" di bawah adalah
+  ukuran jendela kamera yang benar-benar terlihat di layar — SELALU
+  tetap seukuran ini walau petanya kamu buat sangat besar. Kamera
+  otomatis mengikuti hero pemain (lihat js/engine/camera.js), dan
+  peta penuh selalu bisa dilihat lewat minimap.
 */
 window.GAME_CONFIG = {
 
@@ -60,18 +72,30 @@ window.GAME_CONFIG = {
   laneBounds: { topPct: 0.15, bottomPct: 0.85 },
 
   // Posisi vertikal minion tiap gelombang, sebagai persentase tinggi
-  // kanvas. Jumlah elemen di sini membatasi variasi ketinggian minion
+  // peta. Jumlah elemen di sini membatasi variasi ketinggian minion
   // (dipakai berulang jika satu gelombang berisi lebih banyak minion).
   waveYOffsetsPct: [0.375, 0.5, 0.625, 0.4375, 0.5625],
 
-  // Jarak aman dari tepi kanvas / markas agar unit tidak menembus
+  // Jarak aman dari tepi peta / markas agar unit tidak menembus
   // dinding markas (dalam piksel, tidak ikut skala persentase).
   heroClampMargin: 25,
   minionClampMargin: 80,
 
-  // --- Ukuran kanvas ---
+  // --- Ukuran PETA (boleh dibuat ekstrem — lihat catatan di atas) ---
   canvasW: 960,
   canvasH: 400,
+
+  // --- Ukuran LAYAR/kamera (jendela yang benar-benar terlihat) ---
+  // Biasanya tidak perlu diubah walau canvasW/canvasH dibuat ekstrem —
+  // kamera akan otomatis mengikuti hero di peta seukuran apa pun.
+  viewport: { width: 960, height: 400 },
+
+  // --- Minimap (peta kecil di pojok layar) ---
+  minimap: {
+    corner: 'bottom-left',  // 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+    width: 150,             // lebar minimap dalam piksel (tinggi menyesuaikan proporsi peta)
+    margin: 10              // jarak dari tepi layar
+  },
 
   // --- Gelombang minion jalur ---
   waveInterval: 9,         // jeda antar gelombang setelah gelombang pertama

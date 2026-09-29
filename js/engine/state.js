@@ -27,6 +27,8 @@ window.Engine = window.Engine || {};
 
   const layout = {
     CFG, CANVAS_W, CANVAS_H,
+    VIEWPORT_W: CFG.viewport.width,
+    VIEWPORT_H: CFG.viewport.height,
     PLAYER_BASE: pctPoint(CFG.playerBase),
     ENEMY_BASE: pctPoint(CFG.enemyBase),
     PLAYER_SPAWN: pctPoint(CFG.playerSpawn),
@@ -40,9 +42,12 @@ window.Engine = window.Engine || {};
     RESOLVED_CAMPS: window.JUNGLE_CAMPS.map(c=>({...c, x:c.xPct*CANVAS_W, y:c.yPct*CANVAS_H}))
   };
 
+  // Kanvas selalu berukuran VIEWPORT (jendela kamera), bukan ukuran
+  // peta — peta boleh jauh lebih besar; kamera (js/engine/camera.js)
+  // yang mengurus bagian mana dari peta yang sedang terlihat.
   const canvas = document.getElementById('field');
-  canvas.width = CANVAS_W;
-  canvas.height = CANVAS_H;
+  canvas.width = layout.VIEWPORT_W;
+  canvas.height = layout.VIEWPORT_H;
 
   const util = {
     dist: (a,b) => Math.hypot(a.x-b.x, a.y-b.y),
@@ -61,6 +66,13 @@ window.Engine = window.Engine || {};
     stats:null, waveTimer:0, waveCount:0,
     keys:{}, flashes:[], effects:[], lastTs:0,
     game:{state:'menu'}, rafId:null,
+    camera:{x:0,y:0},
+    // preferensi target serangan pemain — diatur lewat 2 tombol di HUD
+    // (lihat js/engine/hud.js): "type" menentukan urutan prioritas jenis
+    // target (dimulai dari nilai ini, lalu berputar minion->hero->
+    // building), "status" menentukan HP mana yang diutamakan dalam satu
+    // jenis target yang sama ('lowest' atau 'highest').
+    priority:{type:'minion', status:'lowest'},
     // dipakai saat pengguna sedang mengatur ulang tombol (lihat input.js)
     rebindingAction:null, rebindingCallback:null
   };

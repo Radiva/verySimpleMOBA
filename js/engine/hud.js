@@ -21,7 +21,11 @@ window.Engine = window.Engine || {};
       chip.className='ability-chip';
       chip.id=containerId+'-'+idx;
       chip.title=a.name;
-      chip.innerHTML='<div class="fill"></div><span class="key-label"></span><span class="cd-num"></span>';
+      chip.innerHTML=
+        '<div class="fill"></div>'+
+        '<span class="ability-icon">'+(a.icon||'✦')+'</span>'+
+        '<span class="key-corner"></span>'+
+        '<span class="cd-num"></span>';
       container.appendChild(chip);
     });
   }
@@ -33,17 +37,43 @@ window.Engine = window.Engine || {};
       if(!chip) return;
       const remain=hero.abilityTimers[idx];
       const fill=chip.querySelector('.fill');
-      const keyLabel=chip.querySelector('.key-label');
+      const icon=chip.querySelector('.ability-icon');
+      const keyCorner=chip.querySelector('.key-corner');
       const cdNum=chip.querySelector('.cd-num');
       const ready=remain<=0;
       chip.classList.toggle('ready',ready);
       fill.style.height = ready ? '0%' : ((remain/a.cooldown)*100)+'%';
-      keyLabel.textContent = (bindings['ability'+(idx+1)]||'').toUpperCase();
-      keyLabel.style.display = ready ? 'block' : 'none';
-      cdNum.style.display = ready ? 'none' : 'block';
+      keyCorner.textContent = (bindings['ability'+(idx+1)]||'').toUpperCase();
+      icon.style.opacity = ready ? '1' : '.35';
+      cdNum.style.display = ready ? 'none' : 'flex';
       cdNum.textContent = ready ? '' : Math.ceil(remain);
     });
   }
+
+  /* ---------------- Tombol prioritas serangan ---------------- */
+  const TYPE_ORDER = ['minion','hero','building'];
+  const TYPE_LABELS = {minion:'Minion', hero:'Hero', building:'Bangunan'};
+
+  function updatePriorityButtons(){
+    const p=E.state.priority;
+    const typeBtn=el('btn-priority-type');
+    const statusBtn=el('btn-priority-status');
+    if(typeBtn) typeBtn.textContent='Prioritas: '+TYPE_LABELS[p.type];
+    if(statusBtn) statusBtn.textContent='Fokus: HP '+(p.status==='lowest'?'Terendah':'Tertinggi');
+  }
+
+  const btnType = el('btn-priority-type');
+  if(btnType) btnType.addEventListener('click',()=>{
+    const idx = TYPE_ORDER.indexOf(E.state.priority.type);
+    E.state.priority.type = TYPE_ORDER[(idx+1)%TYPE_ORDER.length];
+    updatePriorityButtons();
+  });
+  const btnStatus = el('btn-priority-status');
+  if(btnStatus) btnStatus.addEventListener('click',()=>{
+    E.state.priority.status = E.state.priority.status==='lowest' ? 'highest' : 'lowest';
+    updatePriorityButtons();
+  });
+  updatePriorityButtons();
 
   function updateHUD(){
     const s=E.state, CFG=E.layout.CFG;

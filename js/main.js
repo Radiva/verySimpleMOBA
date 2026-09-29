@@ -44,7 +44,7 @@
     const bindings=window.GameEngine.getKeyBindings();
     const abilitiesHtml = def.abilities.map((a,i)=>{
       const key=(bindings['ability'+(i+1)]||(i+1)).toString().toUpperCase();
-      return '<div>[<b>'+key+'</b>] <b>'+a.name+'</b> — '+abilityTypeLabel(a.type)+'</div>';
+      return '<div>'+(a.icon||'✦')+' [<b>'+key+'</b>] <b>'+a.name+'</b> — '+abilityTypeLabel(a.type)+'</div>';
     }).join('');
     const detail=el('hero-detail');
     detail.innerHTML=

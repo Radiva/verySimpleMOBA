@@ -56,6 +56,41 @@ window.Engine = window.Engine || {};
     return candidates.reduce((a,b)=> E.util.dist(u,a)<=E.util.dist(u,b)?a:b);
   }
 
+  // Target hero pemain memakai preferensi yang bisa diatur lewat 2
+  // tombol di HUD (Engine.state.priority — lihat js/engine/hud.js):
+  //   - "type"   : jenis target diutamakan lebih dulu, lalu berputar
+  //                minion -> hero -> building -> minion.
+  //   - "status" : di antara target sejenis, pilih HP 'lowest' atau
+  //                'highest'. Jarak dipakai hanya sebagai pemecah seri.
+  // Dipakai untuk serangan biasa hero pemain dan kemampuan bertipe
+  // "snipe" miliknya — unit lain (musuh AI, minion, menara, monster)
+  // tetap memakai findTargetFor() di atas (target terdekat).
+  function categoryOf(t){
+    if(t.type==='minion') return 'minion';
+    if(t.type==='hero') return 'hero';
+    return 'building'; // menara atau markas
+  }
+
+  function pickTargetByPriority(u, range){
+    const s=E.state;
+    const candidates = allTargets().filter(t=>t.team!==u.team && E.util.dist(u,t)<=range);
+    if(candidates.length===0) return null;
+    const base=['minion','hero','building'];
+    const startIdx=base.indexOf(s.priority.type);
+    const order = base.slice(startIdx).concat(base.slice(0,startIdx));
+    for(const cat of order){
+      const group = candidates.filter(t=>categoryOf(t)===cat);
+      if(group.length){
+        group.sort((a,b)=>{
+          const diff = s.priority.status==='lowest' ? a.hp-b.hp : b.hp-a.hp;
+          return diff!==0 ? diff : E.util.dist(u,a)-E.util.dist(u,b);
+        });
+        return group[0];
+      }
+    }
+    return null;
+  }
+
   function addFlash(source,target,strong){
     E.state.flashes.push({x1:source.x,y1:source.y,x2:target.x,y2:target.y,t:0.16,max:0.16,
       strong:!!strong, color:source.color||(source.team==='player'?'#3f7fb0':'#b2402f')});
@@ -127,8 +162,15 @@ window.Engine = window.Engine || {};
 
     for(const u of attackers){
       if(u.atkTimer>0){ u.atkTimer-=dt; continue; }
-      const t=findTargetFor(u);
-      if(t){ dealDamage(u,t,E.util.effDmg(u)); u.atkTimer=E.util.effAtkInterval(u); }
+      const t = (u===s.playerHero) ? pickTargetByPriority(u,u.range) : findTargetFor(u);
+      if(t){
+        // hero menghadap target yang sedang diserang (panah arah ikut berputar)
+        if(u.dir){
+          const dx=t.x-u.x, dy=t.y-u.y, d=Math.hypot(dx,dy);
+          if(d>0) u.dir={x:dx/d,y:dy/d};
+        }
+        dealDamage(u,t,E.util.effDmg(u)); u.atkTimer=E.util.effAtkInterval(u);
+      }
     }
   }
 
@@ -146,7 +188,7 @@ window.Engine = window.Engine || {};
       }
       E.state.effects.push({kind:'slam',x:hero.x,y:hero.y,t:0,dur:0.4,maxR:a.radius,color:hero.color});
     } else if(a.type==='snipe'){
-      const target=nearestEnemyWithin(hero,a.radius);
+      const target = hero===E.state.playerHero ? pickTargetByPriority(hero,a.radius) : nearestEnemyWithin(hero,a.radius);
       if(target){
         const dmg=(a.baseDamage+hero.level*a.perLevel)*dmgMult;
         dealDamage(hero,target,dmg);
@@ -174,7 +216,7 @@ window.Engine = window.Engine || {};
   }
 
   window.Engine.Combat = {
-    allTargets, nearestEnemyWithin, findTargetFor,
+    allTargets, nearestEnemyWithin, findTargetFor, pickTargetByPriority,
     dealDamage, awardXP, applyBuff, performAutoAttacks,
     useAbility, updateEnemyAbilities
   };

@@ -137,6 +137,8 @@ window.Engine = window.Engine || {};
       ctx.lineWidth=2;
       ctx.stroke();
     }
+    // badan hero: lingkaran warna tim + ikon/logo hero (sama seperti di
+    // layar pemilihan), diambil dari HERO_DEFS lewat h.icon
     ctx.beginPath();
     ctx.arc(h.x,h.y,15,0,Math.PI*2);
     ctx.fillStyle=h.color;
@@ -144,6 +146,30 @@ window.Engine = window.Engine || {};
     ctx.lineWidth=3;
     ctx.strokeStyle = h.team==='player' ? '#3f7fb0' : '#b2402f';
     ctx.stroke();
+    if(h.icon){
+      ctx.font="14px sans-serif";
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(h.icon, h.x, h.y+1);
+      ctx.textBaseline='alphabetic';
+    }
+
+    // panah kecil menandai arah hadap hero (mengikuti arah gerak terakhir)
+    if(h.dir){
+      const ang=Math.atan2(h.dir.y,h.dir.x);
+      const rInner=17, rOuter=24, spread=2.5;
+      const tipX=h.x+Math.cos(ang)*rOuter, tipY=h.y+Math.sin(ang)*rOuter;
+      const baseCx=h.x+Math.cos(ang)*rInner, baseCy=h.y+Math.sin(ang)*rInner;
+      const perpX=-Math.sin(ang), perpY=Math.cos(ang);
+      ctx.beginPath();
+      ctx.moveTo(tipX,tipY);
+      ctx.lineTo(baseCx+perpX*spread, baseCy+perpY*spread);
+      ctx.lineTo(baseCx-perpX*spread, baseCy-perpY*spread);
+      ctx.closePath();
+      ctx.fillStyle='#ece4d0';
+      ctx.fill();
+    }
+
     ctx.font="600 11px 'Rajdhani', sans-serif";
     ctx.fillStyle='#ece4d0';
     ctx.textAlign='center';
@@ -191,7 +217,14 @@ window.Engine = window.Engine || {};
   }
 
   function render(){
-    const s=E.state;
+    const s=E.state, L=E.layout, ctx=E.ctx;
+
+    // latar viewport penuh dulu (terlihat kalau peta lebih kecil dari layar)
+    ctx.fillStyle='#0c0f0a';
+    ctx.fillRect(0,0,L.VIEWPORT_W,L.VIEWPORT_H);
+
+    ctx.save();
+    ctx.translate(-s.camera.x, -s.camera.y);
     drawBg();
     drawBase(s.playerBase,true);
     drawBase(s.enemyBase,false);
@@ -205,6 +238,11 @@ window.Engine = window.Engine || {};
     drawHero(s.enemyHero);
     drawFlashes();
     drawEffects();
+    ctx.restore();
+
+    // minimap digambar SETELAH restore supaya posisinya tetap di layar,
+    // tidak ikut bergeser bersama kamera.
+    E.Camera.drawMinimap();
   }
 
   window.Engine.Render = { render };

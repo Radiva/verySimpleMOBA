@@ -14,11 +14,12 @@ window.Engine = window.Engine || {};
   function createHero(team,id,spawn){
     const def = window.HERO_DEFS[id];
     return {
-      type:'hero', team, id, name:def.name, title:def.title, color:def.color,
+      type:'hero', team, id, name:def.name, title:def.title, color:def.color, icon:def.icon,
       x:spawn.x, y:spawn.y, hp:def.maxHp, maxHp:def.maxHp, dmg:def.dmg,
       range:def.range, atkInterval:def.atkInterval, atkTimer:0, speed:def.speed,
       level:1, xp:0, abilities:def.abilities, abilityTimers:def.abilities.map(()=>0),
-      respawnTimer:0, buffTimer:0, buffDmgMult:1, buffSpeedMult:1, buffAtkMult:1
+      respawnTimer:0, buffTimer:0, buffDmgMult:1, buffSpeedMult:1, buffAtkMult:1,
+      dir:{x: team==='player'?1:-1, y:0}
     };
   }
 
@@ -102,6 +103,7 @@ window.Engine = window.Engine || {};
     s.lastTs=ts;
     if(s.game.state==='playing'){
       updateAll(dt);
+      E.Camera.updateCamera();
       E.Render.render();
       E.HUD.updateHUD();
       s.rafId=requestAnimationFrame(loop);

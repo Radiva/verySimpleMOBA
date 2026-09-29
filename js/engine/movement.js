@@ -15,6 +15,7 @@ window.Engine = window.Engine || {};
     const dx=dest.x-unit.x, dy=dest.y-unit.y;
     const d=Math.hypot(dx,dy);
     if(d<1) return;
+    if(unit.dir) unit.dir={x:dx/d,y:dy/d};
     const sp=E.util.effSpeed(unit);
     const CFG=E.layout.CFG;
     unit.x=E.util.clamp(unit.x+(dx/d)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);
@@ -31,6 +32,7 @@ window.Engine = window.Engine || {};
     if(I.isDown('right')) dx+=1;
     if(dx||dy){
       const len=Math.hypot(dx,dy);
+      hero.dir={x:dx/len,y:dy/len};
       const sp=E.util.effSpeed(hero);
       const CFG=E.layout.CFG;
       hero.x=E.util.clamp(hero.x+(dx/len)*sp*dt,CFG.heroClampMargin,E.layout.CANVAS_W-CFG.heroClampMargin);

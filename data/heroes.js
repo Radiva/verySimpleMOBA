@@ -21,7 +21,10 @@
                   abilities[0] -> tombol 1, abilities[1] -> tombol 2,
                   abilities[2] -> tombol 3, abilities[3] -> tombol 4.
 
-  Tiap objek di "abilities" mendukung tiga tipe (field "type"):
+  Tiap objek di "abilities" butuh field "icon" (satu emoji, ditampilkan
+  besar di kotak kemampuan — huruf tombolnya sendiri otomatis muncul
+  kecil di sudut kotak, tidak perlu ditulis di sini) dan mendukung tiga
+  tipe (field "type"):
     - "aoe"   : merusak semua musuh di sekitar posisi hero saat ini.
                 pakai field "radius" untuk jangkauan ledakan.
     - "snipe" : menembak satu musuh terdekat dari jarak jauh.
@@ -33,7 +36,7 @@
     baseDamage + (level hero saat ini) * perLevel
 
   Ingin menambah tipe kemampuan baru (mis. buff tim, dash, dsb)?
-  Tambahkan penanganannya pada fungsi useAbility() di js/engine.js —
+  Tambahkan penanganannya pada fungsi useAbility() di js/engine/combat.js —
   data hero cukup mereferensikan tipe barunya lewat field "type".
 */
 window.HERO_DEFS = {
@@ -50,8 +53,8 @@ window.HERO_DEFS = {
     atkInterval: 0.75,
     speed: 135,
     abilities: [
-      { name: 'Hantaman Bumi', type: 'aoe', cooldown: 6, radius: 85, baseDamage: 50, perLevel: 8 },
-      { name: 'Regenerasi Baja', type: 'heal', cooldown: 14, baseDamage: 60, perLevel: 10 }
+      { name: 'Hantaman Bumi', icon: '💥', type: 'aoe', cooldown: 6, radius: 85, baseDamage: 50, perLevel: 8 },
+      { name: 'Regenerasi Baja', icon: '❤️', type: 'heal', cooldown: 14, baseDamage: 60, perLevel: 10 }
     ]
   },
 
@@ -67,8 +70,8 @@ window.HERO_DEFS = {
     atkInterval: 0.9,
     speed: 150,
     abilities: [
-      { name: 'Tembakan Tajam', type: 'snipe', cooldown: 5, radius: 230, baseDamage: 65, perLevel: 10 },
-      { name: 'Pulih Alami', type: 'heal', cooldown: 16, baseDamage: 45, perLevel: 8 }
+      { name: 'Tembakan Tajam', icon: '🎯', type: 'snipe', cooldown: 5, radius: 230, baseDamage: 65, perLevel: 10 },
+      { name: 'Pulih Alami', icon: '❤️', type: 'heal', cooldown: 16, baseDamage: 45, perLevel: 8 }
     ]
   }
 
@@ -80,9 +83,9 @@ window.HERO_DEFS = {
   //   desc: 'Serba bisa dengan tiga kemampuan berbeda.',
   //   maxHp: 360, dmg: 18, range: 55, atkInterval: 0.8, speed: 140,
   //   abilities: [
-  //     { name: 'Sabetan', type: 'aoe', cooldown: 5, radius: 70, baseDamage: 40, perLevel: 6 },
-  //     { name: 'Panah Sumur', type: 'snipe', cooldown: 7, radius: 200, baseDamage: 55, perLevel: 9 },
-  //     { name: 'Napas Sumur', type: 'heal', cooldown: 12, baseDamage: 55, perLevel: 9 }
+  //     { name: 'Sabetan', icon: '🗡️', type: 'aoe', cooldown: 5, radius: 70, baseDamage: 40, perLevel: 6 },
+  //     { name: 'Panah Sumur', icon: '🏹', type: 'snipe', cooldown: 7, radius: 200, baseDamage: 55, perLevel: 9 },
+  //     { name: 'Napas Sumur', icon: '❤️', type: 'heal', cooldown: 12, baseDamage: 55, perLevel: 9 }
   //   ]
   // }
 };

@@ -23,7 +23,8 @@ garis-depan/
     │   ├── combat.js          targeting, damage, XP, buff, kemampuan
     │   ├── movement.js        gerak hero/AI/minion, gelombang, respawn, regen
     │   ├── render.js          semua fungsi gambar ke kanvas
-    │   ├── hud.js             sinkronisasi panel HP/XP/kemampuan ke DOM
+    │   ├── camera.js          kamera mengikuti hero + minimap pojok layar
+    │   ├── hud.js             sinkronisasi panel HP/XP/kemampuan/prioritas ke DOM
     │   ├── input.js           pembacaan tombol + sistem ganti tombol (rebind)
     │   └── core.js            setup entitas, loop utama, API window.GameEngine
     └── main.js               layar pemilihan hero (daftar+detail) & modal tombol
@@ -42,10 +43,35 @@ yang diinginkan. Pengaturan tersimpan otomatis di browser (localStorage)
 sehingga tetap berlaku walau halaman ditutup dan dibuka lagi. Tombol
 "Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4.
 
-Setiap kotak kemampuan di HUD menampilkan **huruf tombolnya sendiri**
-dan **angka hitung mundur** saat sedang cooldown (bukan cuma efek glow)
-— begitu angkanya hilang dan kotak menyala terang, kemampuan siap
-dipakai lagi.
+Setiap kotak kemampuan di HUD menampilkan **ikon/logo kemampuannya**
+(dari field `icon` di `data/heroes.js`) dengan **huruf tombolnya**
+kecil di salah satu sudut kotak, dan **angka hitung mundur** menutupi
+ikon saat sedang cooldown (bukan cuma efek glow) — begitu angkanya
+hilang dan kotak menyala terang, kemampuan siap dipakai lagi.
+
+## Prioritas serangan
+
+Dua tombol di panel hero pemain mengatur target mana yang diserang
+duluan saat ada beberapa musuh dalam jangkauan sekaligus:
+
+- **"Prioritas: ..."** — jenis target yang diutamakan, berputar tiap
+  diklik: **Minion → Hero → Bangunan → Minion → ...** (jenis yang
+  dipilih dicoba lebih dulu; kalau tidak ada target jenis itu dalam
+  jangkauan, otomatis lanjut ke jenis berikutnya di urutan tersebut).
+- **"Fokus: HP ..."** — di antara target sejenis, pilih yang **HP
+  Terendah** atau **HP Tertinggi** (jarak hanya dipakai sebagai
+  pemecah seri kalau HP-nya sama).
+
+Pengaturan ini berlaku untuk serangan biasa hero pemain dan kemampuan
+bertipe `snipe` miliknya. Musuh (AI), minion, dan menara tetap memakai
+target terdekat seperti biasa.
+
+## Tampilan hero di kanvas
+
+Selain lingkaran berwarna tim, hero sekarang juga menampilkan **ikon
+hero** (sama seperti di layar pemilihan) di tengah lingkaran, plus
+**panah kecil** di tepi lingkaran yang menunjukkan arah hadap hero
+mengikuti arah gerak terakhirnya.
 
 ## Layar pemilihan hero
 
