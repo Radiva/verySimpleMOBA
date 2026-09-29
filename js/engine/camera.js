@@ -21,7 +21,7 @@ window.Engine = window.Engine || {};
   function updateCamera(){
     const L=E.layout, s=E.state;
     const vw=L.VIEWPORT_W, vh=L.VIEWPORT_H;
-    const hero = s.playerHero && s.playerHero.hp>0 ? s.playerHero : s.enemyHero;
+    const hero = s.playerHero; // tetap fokus ke hero pemain (juga saat menunggu respawn)
     const focusX = hero ? hero.x : L.CANVAS_W/2;
     const focusY = hero ? hero.y : L.CANVAS_H/2;
 
@@ -50,6 +50,7 @@ window.Engine = window.Engine || {};
 
   function drawMinimap(){
     const ctx=E.ctx, L=E.layout, s=E.state;
+    if(L.CFG.minimap.enabled===false) return;
     const {mx,my,mmW,mmH} = minimapRect();
     const scale = mmW/L.CANVAS_W;
     const dot=(x,y,r)=>{ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); };
@@ -73,6 +74,13 @@ window.Engine = window.Engine || {};
     for(const t of s.playerTowers) if(t.hp>0) dot(mx+t.x*scale, my+t.y*scale, 1.6);
     ctx.fillStyle='#d0705a';
     for(const t of s.enemyTowers) if(t.hp>0) dot(mx+t.x*scale, my+t.y*scale, 1.6);
+
+    // minion & monster hutan (titik kecil)
+    ctx.fillStyle='#8fb8dc';
+    for(const m of s.playerMinions) if(m.hp>0) dot(mx+m.x*scale, my+m.y*scale, 0.9);
+    ctx.fillStyle='#e0917f';
+    for(const m of s.enemyMinions) if(m.hp>0) dot(mx+m.x*scale, my+m.y*scale, 0.9);
+    for(const m of s.jungleMonsters){ if(m.hp<=0) continue; ctx.fillStyle=m.color; dot(mx+m.x*scale, my+m.y*scale, 1.4); }
 
     // hero
     if(s.playerHero.hp>0){ ctx.fillStyle=s.playerHero.color; dot(mx+s.playerHero.x*scale, my+s.playerHero.y*scale, 2.6); }

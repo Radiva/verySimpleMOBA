@@ -55,25 +55,29 @@ window.Engine = window.Engine || {};
   const TYPE_LABELS = {minion:'Minion', hero:'Hero', building:'Bangunan'};
 
   function updatePriorityButtons(){
-    const p=E.state.priority;
+    const p=E.state.priority, b=E.Input.getBindings();
     const typeBtn=el('btn-priority-type');
     const statusBtn=el('btn-priority-status');
-    if(typeBtn) typeBtn.textContent='Prioritas: '+TYPE_LABELS[p.type];
-    if(statusBtn) statusBtn.textContent='Fokus: HP '+(p.status==='lowest'?'Terendah':'Tertinggi');
+    if(typeBtn) typeBtn.textContent='Prioritas: '+TYPE_LABELS[p.type]+' ['+(b.priorityType||'').toUpperCase()+']';
+    if(statusBtn) statusBtn.textContent='Fokus: HP '+(p.status==='lowest'?'Terendah':'Tertinggi')+' ['+(b.priorityStatus||'').toUpperCase()+']';
   }
 
-  const btnType = el('btn-priority-type');
-  if(btnType) btnType.addEventListener('click',()=>{
+  // Urutan jenis target: minion -> hero -> building -> minion -> ...
+  function cyclePriorityType(){
     const idx = TYPE_ORDER.indexOf(E.state.priority.type);
     E.state.priority.type = TYPE_ORDER[(idx+1)%TYPE_ORDER.length];
     updatePriorityButtons();
-  });
-  const btnStatus = el('btn-priority-status');
-  if(btnStatus) btnStatus.addEventListener('click',()=>{
+  }
+  // Urutan status: HP terendah <-> HP tertinggi
+  function cyclePriorityStatus(){
     E.state.priority.status = E.state.priority.status==='lowest' ? 'highest' : 'lowest';
     updatePriorityButtons();
-  });
-  updatePriorityButtons();
+  }
+
+  const btnType = el('btn-priority-type');
+  if(btnType) btnType.addEventListener('click', cyclePriorityType);
+  const btnStatus = el('btn-priority-status');
+  if(btnStatus) btnStatus.addEventListener('click', cyclePriorityStatus);
 
   function updateHUD(){
     const s=E.state, CFG=E.layout.CFG;
@@ -85,6 +89,7 @@ window.Engine = window.Engine || {};
     el('e-hp').style.width=Math.max(0,(s.enemyHero.hp/s.enemyHero.maxHp*100))+'%';
 
     updateAbilityChips('p-ability-row',s.playerHero);
+    updatePriorityButtons();
 
     const atMax = s.playerHero.level>=CFG.heroMaxLevel;
     el('p-xp-fill').style.width = atMax ? '100%' : Math.max(0,(s.playerHero.xp/E.util.xpNeeded(s.playerHero.level)*100))+'%';
@@ -120,5 +125,6 @@ window.Engine = window.Engine || {};
     }
   }
 
-  window.Engine.HUD = { buildAbilityUI, updateAbilityChips, updateHUD };
+  window.Engine.HUD = { buildAbilityUI, updateAbilityChips, updateHUD,
+    updatePriorityButtons, cyclePriorityType, cyclePriorityStatus };
 })();

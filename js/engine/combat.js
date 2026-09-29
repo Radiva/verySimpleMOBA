@@ -68,6 +68,7 @@ window.Engine = window.Engine || {};
   function categoryOf(t){
     if(t.type==='minion') return 'minion';
     if(t.type==='hero') return 'hero';
+    if(t.type==='monster') return 'monster'; // selalu terakhir
     return 'building'; // menara atau markas
   }
 
@@ -77,7 +78,7 @@ window.Engine = window.Engine || {};
     if(candidates.length===0) return null;
     const base=['minion','hero','building'];
     const startIdx=base.indexOf(s.priority.type);
-    const order = base.slice(startIdx).concat(base.slice(0,startIdx));
+    const order = base.slice(startIdx).concat(base.slice(0,startIdx)).concat('monster');
     for(const cat of order){
       const group = candidates.filter(t=>categoryOf(t)===cat);
       if(group.length){

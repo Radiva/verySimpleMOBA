@@ -26,11 +26,13 @@ window.Engine = window.Engine || {};
 
   const DEFAULTS = {
     up:'w', down:'s', left:'a', right:'d',
-    ability1:'1', ability2:'2', ability3:'3', ability4:'4'
+    ability1:'1', ability2:'2', ability3:'3', ability4:'4',
+    priorityType:'q', priorityStatus:'e'
   };
   const ACTION_LABELS = {
     up:'Gerak Atas', down:'Gerak Bawah', left:'Gerak Kiri', right:'Gerak Kanan',
-    ability1:'Kemampuan 1', ability2:'Kemampuan 2', ability3:'Kemampuan 3', ability4:'Kemampuan 4'
+    ability1:'Kemampuan 1', ability2:'Kemampuan 2', ability3:'Kemampuan 3', ability4:'Kemampuan 4',
+    priorityType:'Prioritas Jenis Target', priorityStatus:'Prioritas Status HP'
   };
   const STORAGE_KEY = 'garisdepan_keybindings_v1';
 
@@ -86,6 +88,11 @@ window.Engine = window.Engine || {};
       E.state.rebindingCallback=null;
       if(cb) cb();
       return;
+    }
+
+    if(E.state.game && E.state.game.state==='playing'){
+      if(key===bindings.priorityType){ e.preventDefault(); E.HUD.cyclePriorityType(); }
+      if(key===bindings.priorityStatus){ e.preventDefault(); E.HUD.cyclePriorityStatus(); }
     }
 
     for(let i=0;i<4;i++){

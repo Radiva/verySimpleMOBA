@@ -22,7 +22,9 @@ window.Engine = window.Engine || {};
     ctx.fillRect(0,L.LANE_TOP,L.CANVAS_W,L.LANE_BOTTOM-L.LANE_TOP);
     ctx.strokeStyle='rgba(201,155,74,0.14)';
     ctx.lineWidth=1;
-    for(let x=0;x<L.CANVAS_W;x+=40){
+    const camX=E.state.camera.x;
+    const gx0=Math.max(0,Math.floor(camX/40)*40), gx1=Math.min(L.CANVAS_W,camX+L.VIEWPORT_W+40);
+    for(let x=gx0;x<gx1;x+=40){
       ctx.beginPath(); ctx.moveTo(x,L.LANE_TOP); ctx.lineTo(x,L.LANE_BOTTOM); ctx.stroke();
     }
   }

@@ -66,6 +66,7 @@ window.Engine = window.Engine || {};
     s.game = {state:'playing', over:false, winner:null};
     document.getElementById('overlay-over').classList.remove('show');
     E.HUD.buildAbilityUI('p-ability-row', s.playerHero);
+    E.Camera.updateCamera();
     s.lastTs = performance.now();
     cancelAnimationFrame(s.rafId);
     s.rafId = requestAnimationFrame(loop);

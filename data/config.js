@@ -92,10 +92,16 @@ window.GAME_CONFIG = {
 
   // --- Minimap (peta kecil di pojok layar) ---
   minimap: {
+    enabled: true,          // false = sembunyikan minimap
     corner: 'bottom-left',  // 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
     width: 150,             // lebar minimap dalam piksel (tinggi menyesuaikan proporsi peta)
     margin: 10              // jarak dari tepi layar
   },
+
+  // --- Prioritas serangan hero pemain (bisa diganti saat bermain lewat 2 tombol/shortcut) ---
+  //   type   : 'minion' | 'hero' | 'building'   (urutan ganti: minion -> hero -> building -> minion)
+  //   status : 'lowest' | 'highest'              (HP terendah / tertinggi)
+  defaultPriority: { type: 'minion', status: 'lowest' },
 
   // --- Gelombang minion jalur ---
   waveInterval: 9,         // jeda antar gelombang setelah gelombang pertama

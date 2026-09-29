@@ -72,7 +72,7 @@ window.Engine = window.Engine || {};
     // target (dimulai dari nilai ini, lalu berputar minion->hero->
     // building), "status" menentukan HP mana yang diutamakan dalam satu
     // jenis target yang sama ('lowest' atau 'highest').
-    priority:{type:'minion', status:'lowest'},
+    priority:Object.assign({type:'minion', status:'lowest'}, CFG.defaultPriority || {}),
     // dipakai saat pengguna sedang mengatur ulang tombol (lihat input.js)
     rebindingAction:null, rebindingCallback:null
   };

@@ -35,13 +35,15 @@ garis-depan/
 - **W A S D** — gerak
 - **1 / 2 / 3 / 4** — pakai kemampuan sesuai urutan `abilities` hero (hero
   dengan 2 kemampuan hanya memakai tombol 1 dan 2, dst.)
+- **Q** — ganti prioritas jenis target (Minion → Hero → Bangunan → Minion)
+- **E** — ganti prioritas status (HP Terendah ↔ HP Tertinggi)
 - Serangan biasa otomatis menyerang musuh terdekat saat dalam jangkauan
 
 Semua tombol di atas bisa diganti lewat tombol **"⚙ Atur Tombol"** di
 layar pemilihan hero — pilih aksi, tekan "Ubah", lalu tekan tombol baru
 yang diinginkan. Pengaturan tersimpan otomatis di browser (localStorage)
 sehingga tetap berlaku walau halaman ditutup dan dibuka lagi. Tombol
-"Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4.
+"Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4 + Q/E.
 
 Setiap kotak kemampuan di HUD menampilkan **ikon/logo kemampuannya**
 (dari field `icon` di `data/heroes.js`) dengan **huruf tombolnya**
@@ -51,8 +53,10 @@ hilang dan kotak menyala terang, kemampuan siap dipakai lagi.
 
 ## Prioritas serangan
 
-Dua tombol di panel hero pemain mengatur target mana yang diserang
-duluan saat ada beberapa musuh dalam jangkauan sekaligus:
+Dua tombol di panel hero pemain (bisa diklik, atau lewat shortcut
+**Q** dan **E** — bisa diganti di "⚙ Atur Tombol") mengatur target mana
+yang diserang duluan saat ada beberapa musuh dalam jangkauan sekaligus.
+Huruf shortcut-nya tampil di dalam tombol, mis. `Prioritas: Minion [Q]`:
 
 - **"Prioritas: ..."** — jenis target yang diutamakan, berputar tiap
   diklik: **Minion → Hero → Bangunan → Minion → ...** (jenis yang
@@ -62,9 +66,33 @@ duluan saat ada beberapa musuh dalam jangkauan sekaligus:
   Terendah** atau **HP Tertinggi** (jarak hanya dipakai sebagai
   pemecah seri kalau HP-nya sama).
 
+Monster hutan hanya diserang kalau tidak ada minion/hero/bangunan dalam
+jangkauan. Nilai awal kedua pengaturan ini bisa diubah lewat
+`defaultPriority` di `data/config.js`.
+
 Pengaturan ini berlaku untuk serangan biasa hero pemain dan kemampuan
 bertipe `snipe` miliknya. Musuh (AI), minion, dan menara tetap memakai
 target terdekat seperti biasa.
+
+## Kamera & minimap (peta besar)
+
+Peta tidak lagi diperkecil supaya muat di layar. Ukuran layar (`viewport`
+di `data/config.js`) selalu tetap, sedangkan peta (`canvasW`/`canvasH`)
+boleh jauh lebih besar — **kamera mengikuti hero pemain** dan berhenti di
+tepi peta. Kalau peta lebih kecil dari layar, peta ditaruh di tengah.
+Selama hero menunggu respawn, kamera tetap di tempat hero terakhir.
+
+**Minimap** menampilkan seluruh peta (markas, menara, minion, monster
+hutan, kedua hero) beserta kotak putih penanda area yang sedang terlihat.
+Atur lewat `minimap` di `data/config.js`:
+
+- `enabled` — `true` / `false`
+- `corner` — `'top-left'`, `'top-right'`, `'bottom-left'` (bawaan), atau
+  `'bottom-right'`
+- `width` — lebar minimap (tinggi menyesuaikan proporsi peta)
+- `margin` — jarak dari tepi layar
+
+Untuk mencoba kamera, ubah `canvasW` jadi mis. `2400` di `data/config.js`.
 
 ## Tampilan hero di kanvas
 
