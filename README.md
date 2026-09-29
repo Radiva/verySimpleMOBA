@@ -18,20 +18,42 @@ garis-depan/
 │   ├── minions.js        jenis minion jalur, susunan gelombang, pertumbuhan stat
 │   └── jungle.js         jenis monster hutan + posisi kemp
 └── js/
-    ├── engine.js         mesin simulasi, tempur, AI, render (jarang perlu diubah)
-    └── main.js           membangun layar pemilihan hero dari data/heroes.js
+    ├── engine/               mesin, dipecah per modul agar mudah dikembangkan
+    │   ├── state.js           namespace Engine + resolusi layout peta
+    │   ├── combat.js          targeting, damage, XP, buff, kemampuan
+    │   ├── movement.js        gerak hero/AI/minion, gelombang, respawn, regen
+    │   ├── render.js          semua fungsi gambar ke kanvas
+    │   ├── hud.js             sinkronisasi panel HP/XP/kemampuan ke DOM
+    │   ├── input.js           pembacaan tombol + sistem ganti tombol (rebind)
+    │   └── core.js            setup entitas, loop utama, API window.GameEngine
+    └── main.js               layar pemilihan hero (daftar+detail) & modal tombol
 ```
 
-## Kontrol
+## Kontrol & mengganti tombol
 
 - **W A S D** — gerak
 - **1 / 2 / 3 / 4** — pakai kemampuan sesuai urutan `abilities` hero (hero
   dengan 2 kemampuan hanya memakai tombol 1 dan 2, dst.)
 - Serangan biasa otomatis menyerang musuh terdekat saat dalam jangkauan
 
-Setiap kotak kemampuan di HUD menampilkan **angka hitung mundur** saat
-sedang cooldown (bukan cuma efek glow) — begitu angkanya hilang dan
-kotak menyala terang, kemampuan siap dipakai lagi.
+Semua tombol di atas bisa diganti lewat tombol **"⚙ Atur Tombol"** di
+layar pemilihan hero — pilih aksi, tekan "Ubah", lalu tekan tombol baru
+yang diinginkan. Pengaturan tersimpan otomatis di browser (localStorage)
+sehingga tetap berlaku walau halaman ditutup dan dibuka lagi. Tombol
+"Reset ke Default" mengembalikan semua ke WASD + 1/2/3/4.
+
+Setiap kotak kemampuan di HUD menampilkan **huruf tombolnya sendiri**
+dan **angka hitung mundur** saat sedang cooldown (bukan cuma efek glow)
+— begitu angkanya hilang dan kotak menyala terang, kemampuan siap
+dipakai lagi.
+
+## Layar pemilihan hero
+
+Layar awal terbagi dua kolom: **daftar hero di kiri** (klik salah satu
+untuk melihat detailnya) dan **panel detail lengkap di kanan** (stat,
+daftar kemampuan beserta tombolnya, dan tombol "Pilih Hero Ini"). Klik
+hero mana pun di daftar kiri untuk mengganti apa yang ditampilkan di
+kanan sebelum benar-benar memulai pertandingan.
 
 ## Mengedit statistik gim & LAYOUT PETA
 
@@ -78,7 +100,7 @@ komentar di bagian bawah `data/heroes.js`.
 
 Ingin tipe kemampuan yang benar-benar baru (misalnya buff tim atau
 dash)? Tambahkan penanganannya di fungsi `useAbility()` pada
-`js/engine.js`, lalu rujuk tipe barunya dari data hero.
+`js/engine/combat.js`, lalu rujuk tipe barunya dari data hero.
 
 ## Menambah jenis minion, mengubah gelombang, & pertumbuhan stat
 

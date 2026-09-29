@@ -54,31 +54,69 @@ h1,h2,h3,.hero-name,.brand{
   margin:0 0 18px;
 }
 
-/* ---------- Layar pilih hero ---------- */
+/* ---------- Layar pilih hero: daftar (kiri) + detail (kanan) ---------- */
 #screen-select{
   width:100%;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:18px;
+  gap:14px;
 }
-.hero-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+.select-layout{
+  display:flex;
   gap:16px;
   width:100%;
-  max-width:640px;
+  max-width:760px;
+  align-items:flex-start;
 }
-.hero-card{
+.hero-list{
+  flex:0 0 220px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.hero-list-item{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  text-align:left;
+  cursor:pointer;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:9px 11px;
+  color:var(--cream);
+  font-family:'Work Sans',sans-serif;
+  transition:border-color .15s ease, background .15s ease;
+}
+.hero-list-item:hover{border-color:var(--brass);}
+.hero-list-item.active{
+  border-color:var(--brass-bright);
+  background:var(--panel-2);
+  box-shadow:0 0 0 1px var(--brass-bright) inset;
+}
+.hero-list-badge{
+  width:32px;height:32px;border-radius:50%;
+  border:2px solid var(--brass);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;flex-shrink:0;
+}
+.hero-list-name{font-weight:600;font-size:.88rem;}
+.hero-list-title{font-size:.7rem;color:var(--cream-dim);}
+.hero-detail{
+  flex:1;
+  min-width:0;
   background:linear-gradient(180deg,var(--panel-2),var(--panel));
   border:1px solid var(--line);
   border-radius:10px;
-  padding:18px 18px 16px;
+  padding:20px;
   display:flex;
   flex-direction:column;
   gap:10px;
-  text-align:left;
 }
+.select-actions{display:flex;justify-content:center;}
 .hero-badge{
   width:46px;height:46px;border-radius:50%;
   border:2px solid var(--brass);
@@ -101,6 +139,13 @@ h1,h2,h3,.hero-name,.brand{
 }
 .btn:hover{background:var(--brass-bright);}
 .btn:active{transform:scale(.97);}
+.btn.ghost{
+  background:transparent;
+  border:1px solid var(--brass);
+  color:var(--brass-bright);
+}
+.btn.ghost:hover{background:rgba(201,155,74,.12);}
+.btn.small{padding:6px 10px;font-size:.85rem;}
 .controls-note{
   color:var(--cream-dim);font-size:.82rem;text-align:center;max-width:520px;
 }
@@ -204,4 +249,54 @@ canvas{display:block;width:100%;height:auto;}
   .panel-name{font-size:.82rem;}
   .ability-name{display:none;}
   .xp-text{display:none;}
+}
+
+@media (max-width:640px){
+  .select-layout{flex-direction:column;}
+  .hero-list{
+    flex-direction:row;
+    overflow-x:auto;
+    width:100%;
+    flex:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .hero-list-item{flex:0 0 auto;min-width:160px;}
+}
+
+/* ---------- Modal pengaturan tombol ---------- */
+.global-overlay{
+  position:fixed;inset:0;
+  background:rgba(10,12,8,.86);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  z-index:50;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease;
+}
+.global-overlay.show{opacity:1;pointer-events:auto;}
+.modal-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:22px;
+  max-width:420px;
+  width:100%;
+  max-height:80vh;
+  overflow-y:auto;
+}
+.modal-card h2{margin:0 0 14px;color:var(--brass-bright);font-size:1.3rem;}
+.keybind-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid var(--line);
+}
+.keybind-row:last-child{border-bottom:none;}
+.keybind-label{flex:1;font-size:.88rem;}
+.keybind-key{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:5px;
+  padding:3px 10px;font-family:'Rajdhani',sans-serif;font-weight:700;
+  min-width:78px;text-align:center;font-size:.85rem;flex-shrink:0;
+}
+.keybind-actions{
+  display:flex;justify-content:space-between;gap:10px;margin-top:16px;
 }

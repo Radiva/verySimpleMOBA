@@ -16,8 +16,26 @@
 
   <!-- ===== LAYAR PILIH HERO ===== -->
   <div id="screen-select">
-    <div class="hero-grid" id="hero-grid"></div>
-    <div class="controls-note">Pilih salah satu hero untuk memulai. Musuh akan otomatis memakai hero yang tidak kamu pilih. Gerakkan hero dengan <b>W A S D</b>, gunakan kemampuan dengan tombol <b>1</b>/<b>2</b>/<b>3</b>/<b>4</b> sesuai urutan kemampuan hero. Serangan biasa terjadi otomatis saat musuh berada dalam jangkauan. Bunuh monster hutan untuk XP ekstra — Penjaga Kuno memberi buff sementara.</div>
+    <div class="select-layout">
+      <div class="hero-list" id="hero-list"></div>
+      <div class="hero-detail" id="hero-detail"></div>
+    </div>
+    <div class="select-actions">
+      <button class="btn ghost" id="btn-open-keybinds">⚙ Atur Tombol</button>
+    </div>
+    <div class="controls-note">Klik hero di daftar kiri untuk melihat detailnya, lalu tekan "Pilih Hero Ini". Musuh akan otomatis memakai hero yang tidak kamu pilih. Gerakkan hero dengan <b>W A S D</b> (bisa diatur ulang), gunakan kemampuan dengan tombol <b>1</b>/<b>2</b>/<b>3</b>/<b>4</b> sesuai urutan kemampuan hero. Serangan biasa terjadi otomatis saat musuh berada dalam jangkauan. Bunuh monster hutan untuk XP ekstra — Penjaga Kuno memberi buff sementara.</div>
+  </div>
+
+  <!-- ===== MODAL PENGATURAN TOMBOL ===== -->
+  <div class="global-overlay" id="overlay-keybinds">
+    <div class="modal-card">
+      <h2>Atur Tombol</h2>
+      <div class="keybind-list" id="keybind-list"></div>
+      <div class="keybind-actions">
+        <button class="btn ghost" id="btn-reset-keys">Reset ke Default</button>
+        <button class="btn" id="btn-close-keys">Selesai</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===== LAYAR PERMAINAN ===== -->
@@ -88,8 +106,14 @@
 <script src="data/minions.js"></script>
 <script src="data/jungle.js"></script>
 
-<!-- Mesin & orkestrasi -->
-<script src="js/engine.js"></script>
+<!-- Mesin (dipecah per modul agar mudah dikembangkan) & orkestrasi -->
+<script src="js/engine/state.js"></script>
+<script src="js/engine/combat.js"></script>
+<script src="js/engine/movement.js"></script>
+<script src="js/engine/render.js"></script>
+<script src="js/engine/hud.js"></script>
+<script src="js/engine/input.js"></script>
+<script src="js/engine/core.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
