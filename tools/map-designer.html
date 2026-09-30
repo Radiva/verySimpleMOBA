@@ -64,7 +64,7 @@
     pertama = ujung sisi pemain (kiri), titik terakhir = ujung sisi musuh
     (kanan) — urutan di antaranya menentukan kelokan jalur.
     Referensi abu-abu (nexus, menara, zona aman, kemp hutan) dibaca langsung
-    dari <code>data/config.js</code> &amp; <code>data/jungle.js</code> supaya
+    dari <code>data/mapshape.js</code> supaya
     kamu bisa menyelaraskan jalur dengannya; alat ini sendiri tidak mengubah
     file-file itu.
   </p>
@@ -78,7 +78,7 @@
       <div>
         <h2>Lebar koridor jalur</h2>
         <div class="row">
-          <label>laneWidthPct (persentase tinggi peta)</label>
+          <label>laneWidthPct — lebar koridor FUNGSIONAL (persentase tinggi peta)</label>
           <input type="range" id="lane-width" min="0.05" max="0.6" step="0.01">
           <div><span class="val" id="lane-width-val">0.30</span></div>
         </div>
@@ -104,23 +104,24 @@
       <div class="legend">
         <div><span class="sw" style="background:#3f7fb0"></span>Nexus &amp; menara pemain</div>
         <div><span class="sw" style="background:#b2402f"></span>Nexus &amp; menara musuh</div>
-        <div><span class="sw" style="background:#7ea25a"></span>Kemp hutan (data/jungle.js)</div>
+        <div><span class="sw" style="background:#7ea25a"></span>Kemp hutan (data/mapshape.js)</div>
         <div><span class="sw" style="background:#e4b662"></span>Titik &amp; jalur yang sedang didesain</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Data yang sudah ada, hanya dibaca sebagai referensi & titik awal -->
+<!-- data/mapshape.js sekarang menampung SEMUA koordinat peta (jalur,
+     nexus, menara, safe zone, kemp hutan) — cukup dua file ini yang
+     perlu dimuat sebagai referensi & titik awal -->
 <script src="../data/config.js"></script>
-<script src="../data/jungle.js"></script>
 <script src="../data/mapshape.js"></script>
 <script>
 (function(){
   "use strict";
   const CFG = window.GAME_CONFIG;
-  const JUNGLE = window.JUNGLE_CAMPS || [];
-  const EXISTING_SHAPE = window.MAP_SHAPE || null;
+  const SHAPE = window.MAP_SHAPE || {};
+  const JUNGLE = SHAPE.jungleCamps || [];
 
   const canvas = document.getElementById('field');
   const ctx = canvas.getContext('2d');
@@ -129,22 +130,34 @@
   canvas.width = DISPLAY_W;
   canvas.height = DISPLAY_H;
 
-  // --- state jalur yang sedang didesain ---
+  // --- state JALUR FUNGSIONAL (minionPath) yang sedang didesain ---
+  // Alat ini mengedit satu jalur saja. Kalau "visualPath" di file yang
+  // sedang dimuat sudah BERBEDA dari "minionPath"-nya (dibuat berbeda
+  // secara manual di luar alat ini), perbedaan itu dipertahankan apa
+  // adanya saat mengunduh. Kalau belum pernah dibuat berbeda,
+  // visualPath hasil unduhan akan disamakan dengan minionPath yang
+  // baru kamu edit di sini.
   let path = [];
   let laneWidthPct = 0.30;
+  let originalVisualPath = null; // null = belum pernah dibuat berbeda dari minionPath
   let selected = -1;
   let dragging = -1;
 
   function loadFromShape(shape){
-    if(shape && Array.isArray(shape.path) && shape.path.length>=2){
-      path = shape.path.map(p=>({xPct:p.xPct, yPct:p.yPct}));
+    if(shape && Array.isArray(shape.minionPath) && shape.minionPath.length>=2){
+      path = shape.minionPath.map(p=>({xPct:p.xPct, yPct:p.yPct}));
       laneWidthPct = shape.laneWidthPct || 0.30;
+      const sameAsMinion = Array.isArray(shape.visualPath) &&
+        JSON.stringify(shape.visualPath)===JSON.stringify(shape.minionPath);
+      originalVisualPath = (Array.isArray(shape.visualPath) && !sameAsMinion)
+        ? shape.visualPath.map(p=>({xPct:p.xPct, yPct:p.yPct})) : null;
     } else {
       path = [
         {xPct:(CFG.playerSpawn||{xPct:0.05}).xPct, yPct:0.5},
         {xPct:(CFG.enemySpawn||{xPct:0.95}).xPct, yPct:0.5}
       ];
       laneWidthPct = 0.30;
+      originalVisualPath = null;
     }
     selected=-1; dragging=-1;
     document.getElementById('lane-width').value = laneWidthPct;
@@ -178,17 +191,17 @@
 
   function drawReferences(){
     // safe zone (pita tipis di kedua tepi)
-    const safeW = ((CFG.safeZone||{}).widthPct||0.073)*DISPLAY_W;
+    const safeW = (SHAPE.safeZoneWidthPct||0.073)*DISPLAY_W;
     ctx.fillStyle='rgba(63,127,176,0.10)'; ctx.fillRect(0,0,safeW,DISPLAY_H);
     ctx.fillStyle='rgba(178,64,47,0.10)'; ctx.fillRect(DISPLAY_W-safeW,0,safeW,DISPLAY_H);
 
     // nexus
-    if(CFG.playerNexus){ const p=px(CFG.playerNexus); drawRefOctagon(p.x,p.y,16,'#3f7fb0'); }
-    if(CFG.enemyNexus){ const p=px(CFG.enemyNexus); drawRefOctagon(p.x,p.y,16,'#b2402f'); }
+    if(SHAPE.playerNexus){ const p=px(SHAPE.playerNexus); drawRefOctagon(p.x,p.y,16,'#3f7fb0'); }
+    if(SHAPE.enemyNexus){ const p=px(SHAPE.enemyNexus); drawRefOctagon(p.x,p.y,16,'#b2402f'); }
 
     // menara
-    ((CFG.towers||{}).player||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#3f7fb0'); });
-    ((CFG.towers||{}).enemy||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#b2402f'); });
+    ((SHAPE.towers||{}).player||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#3f7fb0'); });
+    ((SHAPE.towers||{}).enemy||[]).forEach(t=>{ const p=px(t); drawRefCircle(p.x,p.y,14,'#b2402f'); });
 
     // spawn
     if(CFG.playerSpawn){ const p=px(CFG.playerSpawn); drawRefCircle(p.x,p.y,9,'#3f7fb0'); }
@@ -322,7 +335,7 @@
     render();
   });
   document.getElementById('btn-reload').addEventListener('click', ()=>{
-    loadFromShape(EXISTING_SHAPE);
+    loadFromShape(SHAPE);
     setStatus('Dimuat ulang dari data/mapshape.js saat ini.');
   });
   document.getElementById('btn-clear-sel').addEventListener('click', ()=>{
@@ -330,43 +343,82 @@
     removePoint(selected);
   });
 
+  function fmtPt(p,indent){ return indent+'{ xPct: '+p.xPct.toFixed(4)+', yPct: '+p.yPct.toFixed(4)+' }'; }
+  function fmtPtArray(arr,indent){ return arr.map(p=>fmtPt(p,indent)).join(',\n'); }
+
   document.getElementById('btn-download').addEventListener('click', ()=>{
-    const lines = path.map(p=>'    { xPct: '+p.xPct.toFixed(4)+', yPct: '+p.yPct.toFixed(4)+' }').join(',\n');
+    const minionLines = fmtPtArray(path,'    ');
+    // visualPath: pertahankan perbedaan manual yang sudah ada (kalau ada),
+    // kalau belum pernah dibuat berbeda -> disamakan dengan minionPath baru.
+    const visualPoints = originalVisualPath || path;
+    const visualLines = fmtPtArray(visualPoints,'    ');
+    const visualNote = originalVisualPath
+      ? '  // visualPath di bawah DIPERTAHANKAN berbeda dari minionPath, sesuai\n  // yang sudah kamu atur manual sebelumnya.'
+      : '  // visualPath di bawah disamakan dengan minionPath (alat ini belum\n  // punya UI untuk membuatnya berbeda) — edit manual di sini kalau perlu.';
+
+    const towers = SHAPE.towers || {player:[], enemy:[]};
+    const towerPlayerLines = fmtPtArray(towers.player||[], '      ');
+    const towerEnemyLines = fmtPtArray(towers.enemy||[], '      ');
+
+    const camps = SHAPE.jungleCamps || [];
+    const campLines = camps.map(c=>
+      "    { id: '"+c.id+"', xPct: "+c.xPct.toFixed(4)+", yPct: "+c.yPct.toFixed(4)+", monster: '"+c.monster+"' }"
+    ).join(',\n');
+
+    const playerNexus = SHAPE.playerNexus || {xPct:0.125, yPct:0.5};
+    const enemyNexus = SHAPE.enemyNexus || {xPct:0.875, yPct:0.5};
+    const safeZoneWidthPct = SHAPE.safeZoneWidthPct!==undefined ? SHAPE.safeZoneWidthPct : 0.073;
+    const terrainWidthPct = SHAPE.terrainWidthPct!==undefined ? SHAPE.terrainWidthPct : laneWidthPct;
+
     const content =
 `/*
-  BENTUK PETA (JALUR)
-  ===================
-  File ini KHUSUS untuk bentuk jalur peta — dipisah dari data/config.js
-  supaya gampang didesain ulang tanpa mengaduk-aduk statistik lain.
+  BENTUK & KOORDINAT PETA
+  =======================
+  Dibuat/diedit terakhir lewat tools/map-designer.html. File ini
+  menampung SEMUA koordinat peta (jalur, nexus, menara, lebar safe
+  zone, kemp hutan) — lihat komentar lengkap di versi asli file ini
+  untuk penjelasan tiap field. Ringkasnya:
+    - minionPath/laneWidthPct  = jalur FUNGSIONAL (rute minion & koridor
+      gerak hero yang sesungguhnya) — inilah yang baru saja kamu edit.
+    - visualPath/terrainWidthPct = jalur VISUAL (pita yang digambar),
+      independen dari jalur fungsional.
+    - playerNexus/enemyNexus, towers, safeZoneWidthPct, jungleCamps =
+      dipertahankan apa adanya dari file yang sedang dimuat — alat ini
+      belum punya UI untuk memindahkannya, edit manual kalau perlu.
 
-  Dibuat/diedit terakhir lewat tools/map-designer.html. "path" adalah
-  daftar titik berurutan dari sisi pemain ke sisi musuh, sebagai
-  PERSENTASE ukuran peta (xPct/yPct — sama seperti data/config.js: 0 =
-  kiri/atas, 1 = kanan/bawah). Garis lurus yang menghubungkan titik-titik
-  ini secara berurutan itulah yang benar-benar digambar & dipakai untuk
-  pergerakan hero/minion — tambah titik di tengah untuk membuat jalur
-  berkelok/zig-zag.
-
-  "laneWidthPct" mengatur lebar koridor jalur (tempat hero bebas bergerak
-  menyamping & minion menyebar), sebagai persentase TINGGI peta.
-
-  Catatan: titik pertama & terakhir di bawah adalah angka xPct/yPct TETAP
-  (bukan lagi mengikuti playerSpawn/enemySpawn secara otomatis) karena
-  file ini digenerate ulang oleh alat desain. Kalau kamu memindah
-  playerSpawn/enemySpawn di data/config.js setelah ini, buka lagi
-  tools/map-designer.html untuk menyelaraskan ulang ujung jalurnya.
-
-  Ingin mendesain ulang secara visual? Buka tools/map-designer.html di
-  browser (klik dua kali, tidak perlu server) — klik kanvas kosong untuk
-  menambah titik, seret titik untuk memindahkannya, klik kanan atau
-  tekan Delete untuk menghapus, atur slider lebar koridor, lalu unduh
-  file ini lagi dan timpa yang lama.
+  Klik kanvas kosong untuk menambah titik jalur, seret titik untuk
+  memindahkannya, klik kanan atau tekan Delete untuk menghapus, atur
+  slider lebar koridor, lalu unduh file ini lagi dan timpa yang lama.
 */
 window.MAP_SHAPE = {
-  path: [
-${lines}
+  minionPath: [
+${minionLines}
   ],
-  laneWidthPct: ${laneWidthPct.toFixed(2)}
+  laneWidthPct: ${laneWidthPct.toFixed(2)},
+
+${visualNote}
+  visualPath: [
+${visualLines}
+  ],
+  terrainWidthPct: ${terrainWidthPct.toFixed(2)},
+
+  playerNexus: ${fmtPt(playerNexus,'')},
+  enemyNexus:  ${fmtPt(enemyNexus,'')},
+
+  towers: {
+    player: [
+${towerPlayerLines}
+    ],
+    enemy: [
+${towerEnemyLines}
+    ]
+  },
+
+  safeZoneWidthPct: ${safeZoneWidthPct},
+
+  jungleCamps: [
+${campLines}
+  ]
 };
 `;
     const blob = new Blob([content], {type:'text/javascript'});
@@ -379,7 +431,7 @@ ${lines}
     setStatus('File mapshape.js terunduh. Pindahkan/timpa ke folder data/ pada proyekmu.');
   });
 
-  loadFromShape(EXISTING_SHAPE);
+  loadFromShape(SHAPE);
 })();
 </script>
 </body>

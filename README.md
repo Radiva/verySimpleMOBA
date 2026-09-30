@@ -13,13 +13,13 @@ garis-depan/
 ├── css/
 │   └── style.css        semua styling
 ├── data/                 <-- edit file-file di sini untuk mengubah gim
-│   ├── config.js         statistik umum + LAYOUT PETA (menara, nexus, safe zone, level, dll)
+│   ├── config.js         angka BALANCE saja (HP, damage, jeda, level, dll) — tanpa koordinat
 │   ├── heroes.js         daftar hero + kemampuan (bisa lebih dari satu)
 │   ├── minions.js        jenis minion jalur, susunan gelombang, pertumbuhan stat
-│   ├── jungle.js         jenis monster hutan + posisi kemp
-│   └── mapshape.js       BENTUK jalur (lurus/berkelok) — file terpisah, lihat "Bentuk peta"
+│   ├── jungle.js         jenis monster hutan (statistik) — posisi kemp ada di mapshape.js
+│   └── mapshape.js       SEMUA koordinat peta: jalur (fungsional+visual), nexus, menara, safe zone, kemp
 ├── tools/
-│   └── map-designer.html alat visual berbasis kanvas untuk mendesain bentuk jalur
+│   └── map-designer.html alat visual berbasis kanvas untuk mendesain koordinat peta
 └── js/
     ├── engine/               mesin, dipecah per modul agar mudah dikembangkan
     │   ├── state.js           namespace Engine + resolusi layout peta
@@ -157,18 +157,22 @@ Sisi tiap tim punya dua elemen berbeda, disusun dari tepi peta ke tengah:
 - **Nexus** — bangunan utama berbentuk **segi delapan**. Hancur = tim itu
   kalah. Nexus **menyerang seperti menara**: memprioritaskan minion
   musuh yang masuk jangkauan, baru hero, dan mengabaikan monster hutan.
-  Diatur lewat `nexus` (`hp`, `dmg`, `range`, `atkInterval`, `radius`)
-  dan `playerNexus`/`enemyNexus` (posisi) di `data/config.js`.
+  Statistiknya (`hp`, `dmg`, `range`, `atkInterval`, `radius`) diatur
+  lewat `nexus` di `data/config.js`; **posisinya** (`playerNexus`/
+  `enemyNexus`) ada di **`data/mapshape.js`** bersama koordinat peta
+  lainnya.
 - **Safe zone** — jalur di tepi peta di belakang nexus (label "ZONA
   AMAN"). Hero **muncul dan respawn di sini**, **memulihkan HP** selama
   berada di dalamnya, dan — selama `protectHeroes: true` — **tidak bisa
   diserang** (sebagai gantinya hero di dalam zona juga tidak bisa
   menyerang atau memakai kemampuan serangan; kemampuan `heal` tetap
-  boleh). Diatur lewat `safeZone` (`widthPct`, `regenRate`,
-  `protectHeroes`) dan `playerSpawn`/`enemySpawn` (harus berada di dalam
-  zona) di `data/config.js`.
-- Minion muncul di depan nexus, di titik `waveSpawnXPct` (persentase
-  lebar peta) — ikut menyesuaikan kalau peta dibuat sangat lebar.
+  boleh). Perilakunya (`regenRate`, `protectHeroes`) diatur lewat
+  `safeZone` di `data/config.js`; **lebarnya** (`safeZoneWidthPct`) ada
+  di `data/mapshape.js`. Titik spawn hero (`playerSpawn`/`enemySpawn`,
+  harus berada di dalam zona) tetap di `data/config.js`.
+- Minion selalu muncul tepat di kedua ujung jalur milik timnya sendiri
+  (lihat "Bentuk peta" di bawah) — ikut menyesuaikan kalau peta dibuat
+  sangat lebar atau jalurnya diubah bentuknya.
 
 ## Timer respawn
 
@@ -211,59 +215,82 @@ Buka **`data/config.js`** — semua angka balancing umum ada di sana
 waktu respawn hero, kebutuhan XP per level, **batas level maksimum**),
 lengkap dengan komentar penjelas di setiap baris.
 
-File yang sama juga mengatur **layout peta**. Posisi nexus, safe zone, menara,
-titik spawn, dan batas jalur ditulis sebagai persentase (`xPct`/`yPct`,
-0 = kiri/atas, 1 = kanan/bawah) dari ukuran kanvas (`canvasW`/`canvasH`),
-bukan piksel tetap. Ini dibuat khusus supaya kamu bisa mengubah peta
-secara ekstrem:
+`data/config.js` hanya berisi angka BALANCE (HP, damage, jeda, level,
+dll) — sudah **tidak lagi menyimpan koordinat apa pun** (posisi nexus,
+menara, kemp hutan, lebar safe zone/jalur). Semua koordinat itu ada di
+satu file terpisah, **`data/mapshape.js`**, supaya tata letak peta bisa
+didesain ulang di satu tempat tanpa mengaduk-aduk angka balance, dan
+sebaliknya. Satu-satunya titik yang tetap di `config.js` adalah
+`playerSpawn`/`enemySpawn`, karena keduanya dipakai `mapshape.js` untuk
+menyamakan ujung jalur secara otomatis.
+
+Kedua file memakai persentase (`xPct`/`yPct`, 0 = kiri/atas, 1 = kanan/
+bawah) dari ukuran kanvas (`canvasW`/`canvasH` di `config.js`), bukan
+piksel tetap — jadi peta bisa diubah secara ekstrem:
 
 - Ganti `canvasW`/`canvasH` ke ukuran apa pun (mis. `1600 x 300` untuk
-  jalur sangat panjang, atau `500 x 900` untuk peta vertikal) — nexus,
-  menara, dan spawn otomatis ikut menyesuaikan proporsi.
+  jalur sangat panjang, atau `500 x 900` untuk peta vertikal) — seluruh
+  koordinat di `mapshape.js` (nexus, menara, jalur, kemp, dst.) otomatis
+  ikut menyesuaikan proporsi.
 - Tambah lebih dari satu menara per sisi lewat array `towers.player` /
-  `towers.enemy` — cocok untuk jalur panjang dengan beberapa lapis
-  pertahanan.
+  `towers.enemy` di `data/mapshape.js` — cocok untuk jalur panjang
+  dengan beberapa lapis pertahanan.
 - Bentuk jalurnya sendiri (lurus atau berkelok) dan lebar koridornya
-  ada di file terpisah, `data/mapshape.js` — lihat bagian "Bentuk peta
-  (jalur)" di bawah.
+  juga ada di `data/mapshape.js` — lihat bagian "Bentuk peta (jalur)"
+  di bawah.
 
 ## Bentuk peta (jalur) — tidak harus lurus
 
-Jalur peta **tidak harus berupa garis lurus**. Bentuknya (dan lebar
-koridornya) ada di file khusus **`data/mapshape.js`**, terpisah dari
-`config.js`, supaya gampang didesain ulang tanpa mengaduk-aduk
-statistik lain.
+`data/mapshape.js` menampung **SEMUA koordinat/posisi di peta** — jalur,
+nexus, menara, lebar safe zone, dan kemp hutan — dalam satu file,
+terpisah dari `data/config.js` (angka balance) dan `data/jungle.js`
+(jenis monster). Isinya:
 
-- `path` — daftar titik berurutan dari sisi pemain ke sisi musuh
-  (format `xPct`/`yPct`, sama seperti di `config.js`). Garis yang
-  menghubungkan titik-titik ini secara berurutan itulah jalur yang
-  sesungguhnya digambar dan dipakai untuk pergerakan — tambah titik di
-  tengah untuk membuatnya berkelok/zig-zag. Contoh bawaan sudah berupa
-  kelokan ringan berbentuk "S", bukan garis lurus.
-- `laneWidthPct` — lebar koridor jalur (persentase TINGGI peta),
-  tempat hero bebas bergerak menyamping dan minion menyebar dalam satu
-  gelombang. **Hero (pemain maupun AI) dan minion tidak bisa keluar
-  dari koridor ini** walau jalurnya berkelok tajam — kalau terasa
-  sempit di tikungan, lebarkan nilainya.
-- Minion selalu muncul tepat di kedua ujung jalur dan berjalan
-  **mengikuti bentuk jalur** sampai ke ujung satunya (bukan jalan lurus
-  menembus peta) — kalau jalur berkelok, minion ikut berkelok.
-- Nexus, menara, safe zone, dan kemp hutan tetap punya posisi sendiri
-  di `config.js`/`jungle.js` (tidak otomatis mengikuti jalur) — kalau
-  kamu membuat jalur berkelok tajam, sesuaikan lagi posisinya supaya
-  tetap masuk akal secara visual.
+- `minionPath` — daftar titik berurutan dari sisi pemain ke sisi musuh
+  (format `xPct`/`yPct`). Ini jalur **FUNGSIONAL**: ke sanalah minion
+  benar-benar berjalan, dan koridor di sekelilingnya (lebar diatur oleh
+  `laneWidthPct`, persentase TINGGI peta) adalah batas gerak hero
+  (pemain maupun AI) — **tidak bisa keluar dari koridor ini** walau
+  jalurnya berkelok tajam. Tambah titik di tengah untuk membuatnya
+  berkelok/zig-zag; contoh bawaan sudah berupa kelokan ringan berbentuk
+  "S", bukan garis lurus.
+- `visualPath` / `terrainWidthPct` — **jalur tampilan** yang benar-benar
+  digambar sebagai pita jalur di kanvas & minimap. **Sengaja terpisah
+  dari `minionPath`** dan sama sekali tidak memengaruhi ke mana minion
+  berjalan atau di mana hero boleh bergerak — boleh dibuat berbeda kalau
+  kamu ingin jalur terlihat lebih lebar/berkelok secara visual tanpa
+  mengubah rute pertarungan sesungguhnya (atau sebaliknya). Bawaan:
+  disamakan persis dengan `minionPath`.
+- `playerNexus`/`enemyNexus` — posisi nexus (statistiknya tetap di
+  `nexus` pada `data/config.js`).
+- `towers.player` / `towers.enemy` — posisi menara, array (bisa lebih
+  dari satu per sisi untuk jalur panjang berlapis). Statistiknya tetap
+  di `data/config.js`.
+- `safeZoneWidthPct` — lebar safe zone (perilakunya, `regenRate` &
+  `protectHeroes`, tetap di `data/config.js`).
+- `jungleCamps` — posisi tiap kemp hutan, merujuk salah satu id di
+  `MONSTER_DEFS` (`data/jungle.js`) lewat field `monster`. Taruh kemp
+  di luar koridor `minionPath` supaya minion tidak ikut bertarung
+  dengan monster hutan.
+
+Kalau kamu membuat jalur berkelok tajam, nexus/menara/kemp tidak
+otomatis ikut bergeser — sesuaikan lagi posisinya di `mapshape.js`
+supaya tetap masuk akal secara visual (alat di bawah membantu untuk ini).
 
 **Mendesain jalur secara visual (bukan menghitung xPct/yPct manual):**
 buka **`tools/map-designer.html`** di browser (klik dua kali, tidak
 perlu server). Kanvas di sana menampilkan posisi nexus/menara/safe
 zone/kemp hutanmu saat ini sebagai referensi abu-abu (dibaca langsung
-dari `data/config.js` & `data/jungle.js`) beserta jalur yang sedang
-aktif. Klik kanvas kosong untuk menambah titik baru di ujung jalur,
-seret titik yang sudah ada untuk memindahkannya, klik kanan atau tekan
-Delete pada titik terpilih untuk menghapusnya, dan ada slider untuk
-lebar koridor. Tombol **"⬇ Unduh data/mapshape.js"** meng-generate
-ulang file itu persis dengan format yang dipakai gim — tinggal timpa
-file lama di folder `data/`.
+dari `data/mapshape.js`) beserta `minionPath` yang sedang aktif. Klik
+kanvas kosong untuk menambah titik baru di ujung jalur, seret titik
+yang sudah ada untuk memindahkannya, klik kanan atau tekan Delete pada
+titik terpilih untuk menghapusnya, dan ada slider untuk lebar koridor.
+Tombol **"⬇ Unduh data/mapshape.js"** meng-generate ulang file itu —
+menimpa `minionPath` (dan menyamakan `visualPath` dengannya kalau
+sebelumnya belum pernah dibuat berbeda) sambil tetap mempertahankan
+nexus/menara/safe zone/kemp hutan yang sudah ada. Alat ini belum punya
+UI khusus untuk membuat `visualPath` berbeda dari `minionPath` — kalau
+mau, edit manual array `visualPath` di file hasil unduhannya.
 
 ## Menambah hero baru & banyak kemampuan sekaligus
 
@@ -307,13 +334,17 @@ Buka **`data/minions.js`**:
 
 ## Sistem hutan (jungle) & menambah monster
 
-Buka **`data/jungle.js`**:
-- `MONSTER_DEFS` — jenis-jenis monster netral (HP, damage, XP, waktu
-  respawn, dan opsional `buff` sementara untuk hero yang membunuhnya).
-- `JUNGLE_CAMPS` — daftar kemp di peta (posisi pakai `xPct`/`yPct`
-  seperti di `config.js`, jadi ikut menyesuaikan kalau kamu mengubah
-  ukuran kanvas). Tambah, hapus, atau pindahkan objek di array ini
-  untuk mengubah tata letak hutan.
+Jenis monster dan posisi kemp ada di dua file berbeda:
+- **`data/jungle.js`** → `MONSTER_DEFS`, jenis-jenis monster netral
+  (HP, damage, XP, waktu respawn, dan opsional `buff` sementara untuk
+  hero yang membunuhnya). Tambah entri baru di sini untuk jenis monster
+  baru.
+- **`data/mapshape.js`** → `jungleCamps`, daftar kemp di peta (posisi
+  `xPct`/`yPct`, otomatis menyesuaikan kalau kamu mengubah ukuran
+  kanvas). Tiap kemp merujuk salah satu id di `MONSTER_DEFS` lewat
+  field `monster`. Tambah, hapus, atau pindahkan objek di array ini —
+  atau lewat `tools/map-designer.html` — untuk mengubah tata letak
+  hutan.
 
 Monster hutan diam di tempat, hanya menyerang hero (bukan minion atau
 menara), dan hidup kembali otomatis setelah `respawnTime` detik. Kemp

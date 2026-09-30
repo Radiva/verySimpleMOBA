@@ -63,14 +63,15 @@ window.Engine = window.Engine || {};
     ctx.lineWidth=1;
     ctx.strokeRect(mx+0.5,my+0.5,mmW-1,mmH-1);
 
-    // bentuk jalur (mengikuti data/mapshape.js, bisa berkelok)
-    if(L.PATH && L.PATH.length>1){
+    // bentuk jalur VISUAL (data/mapshape.js, bisa berkelok) — dipakai
+    // supaya minimap konsisten dengan yang tergambar di layar utama.
+    if(L.VISUAL_PATH && L.VISUAL_PATH.length>1){
       ctx.strokeStyle='rgba(201,155,74,0.5)';
-      ctx.lineWidth=Math.max(1.5, L.LANE_WIDTH*scale);
+      ctx.lineWidth=Math.max(1.5, L.VISUAL_WIDTH*scale);
       ctx.lineCap='round'; ctx.lineJoin='round';
       ctx.beginPath();
-      ctx.moveTo(mx+L.PATH[0].x*scale, my+L.PATH[0].y*scale);
-      for(let i=1;i<L.PATH.length;i++) ctx.lineTo(mx+L.PATH[i].x*scale, my+L.PATH[i].y*scale);
+      ctx.moveTo(mx+L.VISUAL_PATH[0].x*scale, my+L.VISUAL_PATH[0].y*scale);
+      for(let i=1;i<L.VISUAL_PATH.length;i++) ctx.lineTo(mx+L.VISUAL_PATH[i].x*scale, my+L.VISUAL_PATH[i].y*scale);
       ctx.stroke();
     }
 

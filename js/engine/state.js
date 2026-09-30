@@ -25,38 +25,56 @@ window.Engine = window.Engine || {};
   const CANVAS_W = CFG.canvasW, CANVAS_H = CFG.canvasH;
   const pctPoint = p => ({ x: p.xPct*CANVAS_W, y: p.yPct*CANVAS_H });
 
-  // Nexus (bangunan utama, menyerang seperti menara) & safe zone (zona aman di
-  // belakang nexus) — nilai bawaan dipakai bila field-nya tidak ada di config.js
-  const NEXUS_CFG = Object.assign({hp:CFG.baseHp||1500, dmg:45, range:130, atkInterval:1.1, radius:26}, CFG.nexus);
-  const SAFE_CFG = Object.assign({widthPct:0.073, regenRate:25, protectHeroes:true}, CFG.safeZone);
+  // Semua koordinat peta (jalur, nexus, menara, safe zone, kemp hutan) ada
+  // di data/mapshape.js — lihat file itu. Nilai bawaan di bawah cuma
+  // penjaga (fallback) bila file itu tak dimuat / field-nya kosong.
+  const SHAPE = window.MAP_SHAPE || {};
+  const DEFAULT_PATH = [{xPct:0.1,yPct:0.5},{xPct:0.9,yPct:0.5}];
 
-  // --- Bentuk jalur (lihat data/mapshape.js) — bisa berkelok, bukan cuma lurus ---
-  const SHAPE = window.MAP_SHAPE || { path:[{xPct:0.1,yPct:0.5},{xPct:0.9,yPct:0.5}], laneWidthPct:0.3 };
-  const PATH = (SHAPE.path && SHAPE.path.length>=2 ? SHAPE.path : [{xPct:0.1,yPct:0.5},{xPct:0.9,yPct:0.5}]).map(pctPoint);
-  const PATH_SEG_LEN = [];
-  let PATH_LENGTH = 0;
-  for(let i=0;i<PATH.length-1;i++){
-    const d = Math.hypot(PATH[i+1].x-PATH[i].x, PATH[i+1].y-PATH[i].y);
-    PATH_SEG_LEN.push(d);
-    PATH_LENGTH += d;
+  // Jalur FUNGSIONAL (rute minion & koridor gerak hero) — terpisah dari
+  // jalur VISUAL (pita yang digambar) di bawahnya. Lihat penjelasan
+  // lengkap di data/mapshape.js.
+  const MINION_PATH_PCT = (SHAPE.minionPath && SHAPE.minionPath.length>=2) ? SHAPE.minionPath : DEFAULT_PATH;
+  const MINION_PATH = MINION_PATH_PCT.map(pctPoint);
+  const MINION_PATH_SEG_LEN = [];
+  let MINION_PATH_LENGTH = 0;
+  for(let i=0;i<MINION_PATH.length-1;i++){
+    const d = Math.hypot(MINION_PATH[i+1].x-MINION_PATH[i].x, MINION_PATH[i+1].y-MINION_PATH[i].y);
+    MINION_PATH_SEG_LEN.push(d);
+    MINION_PATH_LENGTH += d;
   }
   const LANE_WIDTH = (SHAPE.laneWidthPct||0.3) * CANVAS_H;
   const WAVE_LANE_OFFSETS = (CFG.waveLaneOffsetFractions||[0]).map(f=>f*(LANE_WIDTH/2));
+
+  // Jalur VISUAL (murni tampilan, dipakai render.js & minimap) — boleh
+  // berbeda bentuk dari jalur fungsional di atas. Bawaan: disamakan.
+  const VISUAL_PATH_PCT = (SHAPE.visualPath && SHAPE.visualPath.length>=2) ? SHAPE.visualPath : MINION_PATH_PCT;
+  const VISUAL_PATH = VISUAL_PATH_PCT.map(pctPoint);
+  const VISUAL_WIDTH = (SHAPE.terrainWidthPct!==undefined ? SHAPE.terrainWidthPct : (SHAPE.laneWidthPct||0.3)) * CANVAS_H;
+
+  // Nexus (bangunan utama, menyerang seperti menara) & safe zone (zona aman di
+  // belakang nexus) — statistik/perilaku dari config.js, lebar/posisi dari mapshape.js
+  const NEXUS_CFG = Object.assign({hp:CFG.baseHp||1500, dmg:45, range:130, atkInterval:1.1, radius:26}, CFG.nexus);
+  const SAFE_CFG = Object.assign({widthPct:0.073, regenRate:25, protectHeroes:true}, CFG.safeZone,
+    (SHAPE.safeZoneWidthPct!==undefined ? {widthPct:SHAPE.safeZoneWidthPct} : {}));
+
+  const TOWERS = SHAPE.towers || {player:[], enemy:[]};
 
   const layout = {
     CFG, CANVAS_W, CANVAS_H,
     NEXUS: NEXUS_CFG, SAFE: SAFE_CFG,
     VIEWPORT_W: CFG.viewport.width,
     VIEWPORT_H: CFG.viewport.height,
-    PLAYER_NEXUS: pctPoint(CFG.playerNexus || {xPct:0.125,yPct:0.5}),
-    ENEMY_NEXUS: pctPoint(CFG.enemyNexus || {xPct:0.875,yPct:0.5}),
+    PLAYER_NEXUS: pctPoint(SHAPE.playerNexus || {xPct:0.125,yPct:0.5}),
+    ENEMY_NEXUS: pctPoint(SHAPE.enemyNexus || {xPct:0.875,yPct:0.5}),
     PLAYER_SPAWN: pctPoint(CFG.playerSpawn),
     ENEMY_SPAWN: pctPoint(CFG.enemySpawn),
     SAFE_W: SAFE_CFG.widthPct*CANVAS_W,
-    PATH, PATH_SEG_LEN, PATH_LENGTH, LANE_WIDTH, WAVE_LANE_OFFSETS,
-    PLAYER_TOWER_DEFS: CFG.towers.player.map(pctPoint),
-    ENEMY_TOWER_DEFS: CFG.towers.enemy.map(pctPoint),
-    RESOLVED_CAMPS: window.JUNGLE_CAMPS.map(c=>({...c, x:c.xPct*CANVAS_W, y:c.yPct*CANVAS_H}))
+    MINION_PATH, MINION_PATH_SEG_LEN, MINION_PATH_LENGTH, LANE_WIDTH, WAVE_LANE_OFFSETS,
+    VISUAL_PATH, VISUAL_WIDTH,
+    PLAYER_TOWER_DEFS: (TOWERS.player||[]).map(pctPoint),
+    ENEMY_TOWER_DEFS: (TOWERS.enemy||[]).map(pctPoint),
+    RESOLVED_CAMPS: (SHAPE.jungleCamps||[]).map(c=>({...c, x:c.xPct*CANVAS_W, y:c.yPct*CANVAS_H}))
   };
 
   // Kanvas selalu berukuran VIEWPORT (jendela kamera), bukan ukuran
@@ -84,8 +102,8 @@ window.Engine = window.Engine || {};
     // dari ujung awal (0) sampai ujung akhir (PATH_LENGTH), plus arah jalur
     // di titik itu (radian) — dipakai minion berjalan mengikuti bentuk jalur.
     pointAtPathDistance: (dist) => {
-      const P=layout.PATH, SL=layout.PATH_SEG_LEN;
-      dist = util.clamp(dist, 0, layout.PATH_LENGTH);
+      const P=layout.MINION_PATH, SL=layout.MINION_PATH_SEG_LEN;
+      dist = util.clamp(dist, 0, layout.MINION_PATH_LENGTH);
       let acc=0;
       for(let i=0;i<SL.length;i++){
         if(dist<=acc+SL[i] || i===SL.length-1){
@@ -101,7 +119,7 @@ window.Engine = window.Engine || {};
     // posisi tempuhnya sepanjang jalur — dipakai untuk membatasi hero tetap
     // di dalam koridor jalur (clampToLane) walau jalurnya berkelok.
     closestOnPath: (x,y) => {
-      const P=layout.PATH, SL=layout.PATH_SEG_LEN;
+      const P=layout.MINION_PATH, SL=layout.MINION_PATH_SEG_LEN;
       let bestPt=P[0], bestD=Infinity, bestAlong=0, acc=0;
       for(let i=0;i<P.length-1;i++){
         const a=P[i], b=P[i+1];

@@ -15,13 +15,17 @@ window.Engine = window.Engine || {};
     ctx.fillStyle='#1a2015';
     ctx.fillRect(0,0,L.CANVAS_W,L.CANVAS_H);
 
-    const P=L.PATH;
+    // Pita jalur yang DIGAMBAR memakai VISUAL_PATH — murni tampilan,
+    // sengaja terpisah dari MINION_PATH (rute gerak minion & koridor
+    // hero yang sesungguhnya, lihat js/engine/state.js & movement.js).
+    // Bawaan keduanya sama bentuk, tapi boleh dibuat berbeda lewat
+    // "visualPath" di data/mapshape.js.
+    const P=L.VISUAL_PATH;
     if(!P || P.length<2) return;
 
-    // Koridor jalur digambar sebagai garis TEBAL mengikuti titik-titik
-    // path (data/mapshape.js) — lineCap/lineJoin 'round' otomatis
-    // membuat tikungan membulat mulus walau jalurnya berkelok tajam,
-    // jadi tidak perlu menghitung poligon tepi jalur secara manual.
+    // lineCap/lineJoin 'round' otomatis membuat tikungan membulat mulus
+    // walau jalurnya berkelok tajam, jadi tidak perlu menghitung poligon
+    // tepi jalur secara manual.
     ctx.save();
     ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.beginPath();
@@ -29,11 +33,11 @@ window.Engine = window.Engine || {};
     for(let i=1;i<P.length;i++) ctx.lineTo(P[i].x,P[i].y);
 
     ctx.strokeStyle='#2c3722';
-    ctx.lineWidth=L.LANE_WIDTH;
+    ctx.lineWidth=L.VISUAL_WIDTH;
     ctx.stroke();
 
     ctx.strokeStyle='rgba(60,75,45,0.55)';
-    ctx.lineWidth=L.LANE_WIDTH*0.55;
+    ctx.lineWidth=L.VISUAL_WIDTH*0.55;
     ctx.stroke();
 
     // garis putus-putus di tengah jalur sebagai penanda arah/lebar

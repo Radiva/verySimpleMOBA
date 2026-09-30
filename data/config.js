@@ -1,33 +1,25 @@
 /*
   KONFIGURASI UMUM GIM
   =====================
-  Ubah angka-angka di bawah ini untuk mengatur balance & LAYOUT PETA
-  tanpa menyentuh kode mesin (folder js/engine/). Semua satuan waktu
-  dalam detik.
+  Ubah angka-angka di bawah ini untuk mengatur BALANCE (HP, damage,
+  jeda, level, dll) tanpa menyentuh kode mesin (folder js/engine/).
+  Semua satuan waktu dalam detik.
 
-  ------------------------------------------------------------------
-  TENTANG LAYOUT PETA (canvasW/canvasH & semua field "xPct"/"yPct")
-  ------------------------------------------------------------------
-  Supaya kamu bisa mengubah peta secara EKSTREM (peta sangat lebar,
-  sangat tinggi, jalur dipindah, menara ditambah, dsb) tanpa harus
-  menghitung ulang koordinat piksel satu-satu, posisi setiap elemen
-  peta (nexus, menara, titik spawn, batas jalur) ditulis sebagai
-  PERSENTASE dari ukuran PETA ("canvasW"/"canvasH"), bukan piksel
-  absolut:
-    xPct: 0   = paling kiri peta      xPct: 1   = paling kanan
-    yPct: 0   = paling atas peta      yPct: 1   = paling bawah
-    yPct: 0.5 = tepat di tengah secara vertikal
+  File ini SENGAJA tidak lagi berisi koordinat peta (posisi nexus,
+  menara, kemp hutan, lebar safe zone/jalur) — semua koordinat itu ada
+  di **data/mapshape.js**, supaya tata letak peta bisa didesain ulang
+  di satu tempat tanpa mengaduk-aduk angka balance di sini, dan
+  sebaliknya. Cuma dua titik yang tetap di sini: "playerSpawn" dan
+  "enemySpawn" di bawah, karena keduanya dipakai data/mapshape.js untuk
+  menyamakan ujung jalur secara otomatis (lihat komentar di sana).
 
-  Artinya: ubah "canvasW"/"canvasH" jadi ukuran ekstrem apa pun (mis.
+  Field "xPct"/"yPct" pada playerSpawn/enemySpawn di bawah memakai
+  sistem yang sama dengan data/mapshape.js: PERSENTASE dari ukuran PETA
+  ("canvasW"/"canvasH"), bukan piksel absolut (0 = kiri/atas, 1 = kanan/
+  bawah). Ubah "canvasW"/"canvasH" jadi ukuran ekstrem apa pun (mis.
   1600 x 300 untuk jalur sangat panjang, atau 500 x 900 untuk peta
-  vertikal), dan seluruh nexus/menara/spawn akan otomatis mengikuti
-  proporsi barunya. Kamu juga tetap bebas mengubah tiap xPct/yPct
-  satu-satu untuk tata letak yang benar-benar custom.
-
-  Posisi kemp hutan (jungle) memakai sistem yang sama — lihat
-  data/jungle.js. Bentuk JALUR (lurus atau berkelok) sekarang punya
-  file sendiri: data/mapshape.js — lihat file itu untuk mendesainnya,
-  termasuk lewat alat bantu kanvas di tools/map-designer.html.
+  vertikal) dan seluruh peta — termasuk yang didefinisikan di
+  data/mapshape.js — otomatis mengikuti proporsi barunya.
 
   ------------------------------------------------------------------
   PETA vs LAYAR (viewport) — supaya peta besar tidak "menyusut"
@@ -41,28 +33,15 @@
 */
 window.GAME_CONFIG = {
 
-  // --- Menara ---
+  // --- Menara (statistik saja — posisinya ada di data/mapshape.js) ---
   towerHp: 1000,
   towerDmg: 40,
   towerRange: 115,
   towerAtkInterval: 1,     // detik antar serangan
 
-  // Daftar menara per sisi. Tambah/hapus objek di array ini untuk
-  // menambah jumlah menara (mis. 2-3 menara berurutan di satu sisi
-  // untuk peta jalur panjang). Semua menara memakai stat towerHp/
-  // towerDmg/towerRange/towerAtkInterval di atas.
-  towers: {
-    player: [
-      { xPct: 0.229, yPct: 0.5 }
-    ],
-    enemy: [
-      { xPct: 0.771, yPct: 0.5 }
-    ]
-  },
-
-  // --- Nexus (bangunan utama; hancur = kalah) ---
+  // --- Nexus (statistik saja — posisinya ada di data/mapshape.js) ---
   // Berbentuk segi delapan dan MENYERANG seperti menara: memprioritaskan minion
-  // musuh dulu, baru hero. Letaknya di depan safe zone (lihat di bawah).
+  // musuh dulu, baru hero.
   nexus: {
     hp: 1500,
     dmg: 45,
@@ -70,21 +49,21 @@ window.GAME_CONFIG = {
     atkInterval: 1.1,
     radius: 26             // jari-jari segi delapan (piksel)
   },
-  playerNexus: { xPct: 0.125, yPct: 0.5 },
-  enemyNexus:  { xPct: 0.875, yPct: 0.5 },
 
   // --- Safe zone (zona aman, TERPISAH dari nexus & lebih dalam darinya) ---
-  // Jalur di tepi peta di belakang nexus tiap sisi. Hero muncul (spawn/respawn)
-  // di sini, memulihkan HP tiap detik selama berada di dalamnya, dan tidak bisa
-  // diserang selama protectHeroes: true (hero di dalam safe zone juga tidak bisa
-  // menyerang atau memakai kemampuan serangan, supaya tidak curang).
+  // Jalur di tepi peta di belakang nexus tiap sisi. Lebarnya
+  // (safeZoneWidthPct) ada di data/mapshape.js — di sini cuma
+  // perilakunya: hero muncul (spawn/respawn) di sini, memulihkan HP
+  // tiap detik selama berada di dalamnya, dan tidak bisa diserang
+  // selama protectHeroes: true (hero di dalam safe zone juga tidak
+  // bisa menyerang atau memakai kemampuan serangan, supaya tidak curang).
   safeZone: {
-    widthPct: 0.073,       // lebar zona, persentase dari canvasW
     regenRate: 25,         // HP per detik
     protectHeroes: true
   },
 
-  // --- Titik muncul (respawn) hero — harus berada di dalam safe zone ---
+  // --- Titik muncul (respawn) hero — harus berada di dalam safe zone.
+  // Dipakai juga oleh data/mapshape.js untuk menyamakan ujung jalur. ---
   playerSpawn: { xPct: 0.036, yPct: 0.5 },
   enemySpawn:  { xPct: 0.964, yPct: 0.5 },
 

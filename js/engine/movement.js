@@ -99,7 +99,7 @@ window.Engine = window.Engine || {};
     for(const m of E.state.playerMinions){
       if(m.hp<=0) continue;
       if(E.Combat.findTargetFor(m)) continue;
-      m.pathDist = Math.min(L.PATH_LENGTH, m.pathDist + m.speed*dt);
+      m.pathDist = Math.min(L.MINION_PATH_LENGTH, m.pathDist + m.speed*dt);
       placeOnPath(m);
     }
     for(const m of E.state.enemyMinions){
@@ -113,7 +113,7 @@ window.Engine = window.Engine || {};
   function spawnWave(team,waveNumber){
     const s=E.state, L=E.layout;
     // minion selalu muncul tepat di ujung jalur milik timnya sendiri
-    const startDist = team==='player' ? 0 : L.PATH_LENGTH;
+    const startDist = team==='player' ? 0 : L.MINION_PATH_LENGTH;
     const list = team==='player' ? s.playerMinions : s.enemyMinions;
     const comp = window.WAVE_COMPOSITION;
     const growth = window.MINION_GROWTH || {hpPerWave:0,dmgPerWave:0,speedPerWave:0};
